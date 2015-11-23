@@ -1,0 +1,8 @@
+/node_modules
+/.nrepl-port
+/.lein-repl-history
+/.lein-failures
+/figwheel_server.log
+/target
+/rplugin/nvim-refactor.js.map
+/rplugin/nvim-refactor/
