@@ -8,7 +8,8 @@
                  [rewrite-cljs "0.3.1"]
                  [parinfer "0.1.0"]]
 
-  :npm {:dependencies [[nrepl-client "0.2.3"]]}
+  :npm {:dependencies [[nrepl-client "0.2.3"]
+                       [source-map-support "0.3.3"]]}
 
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-figwheel "0.5.0"]
