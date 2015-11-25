@@ -145,7 +145,7 @@
         (join-let)))) ; join if let above
 
 ;; TODO this can probably escape the ns form - need to root the search it somehow (z/.... (z/node zloc))
-(defn find-or-create-require [zloc v]
+(defn find-or-create-libspec [zloc v]
   (if-let [zfound (z/find-next-value zloc z/next v)]
     zfound
     (-> zloc
@@ -156,9 +156,10 @@
         z/down)))
 
 ;; TODO will insert duplicates
+;; TODO handle :type and :macro
 (defn add-candidate
-  "Add a lib spec to ns form - missing is the package or class and missing-type is #{:ns :class :type :macro}"
-  [zloc [missing missing-type results sym-ns]]
+  "Add a lib spec to ns form - `missing` is the package or class and `missing-type` is one of `#{:ns :class :type :macro}`"
+  [zloc [missing missing-type sym-ns]]
   (try
    (-> zloc
        (z/find z/up #(= nf/FormsNode (type (z/node %)))) ; go to outer form
@@ -167,13 +168,13 @@
        (cond->
          (= missing-type :class)
          (->
-          (find-or-create-require :import) ; go to import
+          (find-or-create-libspec :import) ; go to import
           (z/insert-right (n/newline-node "\n"))
           (z/insert-right (symbol missing)))  ; add class
 
          (= missing-type :ns)
          (->
-          (find-or-create-require :require) ; go to require
+          (find-or-create-libspec :require) ; go to require
           (z/insert-right (n/newline-node "\n"))
           (z/insert-right [(symbol missing)]) ; add require vec and ns
           (z/right))
@@ -187,29 +188,62 @@
 
 (declare run-transform)
 
+(defn nrepl-resolve-missing
+  "Try to add a ns libspec based on whatever the middleware thinks."
+  [conn nvim sym]
+  (.send conn #js {:op "resolve-missing" :symbol (str sym) :debug "true"}
+         (fn [err results]
+           (try
+            (let [cstr (aget (first results) "candidates")
+                  candidates (reader/read-string (cdbg cstr))]
+              (cdbg candidates)
+              (when (> (count candidates) 1)
+                (js/debug "More than one candidate!"))
+              ;; take first one for now - maybe can get input() choice
+              (when-let [[missing missing-type] (first candidates)]
+                (run-transform add-candidate nvim [missing missing-type (namespace sym)] [1 1 1 1]))) ; fake cursor
+            (catch :default e
+              (js/debug "add-missing response exception" e e.stack))))))
+
+(defn nrepl-namespace-aliases
+  "Try to add a ns libspec based on already used aliases.
+  Falls back to `resolve-missing`."
+  [conn nvim sym]
+  (.send conn #js {:op "namespace-aliases" :debug "true"}
+         (fn [err results]
+           (try
+            (let [cstr (aget (first results) "namespace-aliases")
+                  aliases (reader/read-string cstr)
+                  sym-ns (namespace sym)]
+              (if-let [missing (cdbg (first (get-in aliases [:clj (symbol sym-ns)])))]
+                (run-transform add-candidate nvim [missing :ns sym-ns] [1 1 1 1])
+                (nrepl-resolve-missing conn nvim sym)))
+
+            (catch :default e
+              (js/debug "add-missing namespace-aliases" e e.stack))))))
+
 (defn add-missing-libspec
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
   [zloc _ nvim]
   (when-let [conn @nconn]
-    (let [sym (z/sexpr zloc)
-          sym-ns (namespace sym)
-          symstr (str (when sym-ns (str sym-ns "/")) (name sym))]
+    (let [sym (cdbg (z/sexpr zloc))]
       (js/debug "sending" (pr-str conn))
-      (.send conn #js {:op "resolve-missing" :symbol (cdbg symstr) :debug "true"}
-             (fn [err results]
-               (try
-                (let [cstr (aget (first results) "candidates")
-                      candidates (reader/read-string (cdbg cstr))]
-                  (cdbg candidates)
-                  (when (> (count candidates) 1)
-                    (js/debug "More than one candidate!"))
-                  (if-let [[missing missing-type] (first candidates)]
-                    (run-transform add-candidate nvim [missing missing-type sym-ns] [1 1 1 1])))
-                (catch :default e
-                  (js/debug "add-missing response exception" e e.stack)))))))
+      (if (namespace sym)
+        (nrepl-namespace-aliases conn nvim sym)
+        (nrepl-resolve-missing conn nvim sym))))
   zloc)
 
+(defn clean-ns
+  "Asks repl for the missing libspec.
+  When the repl comes back with response, run transform to add to ns"
+  [zloc _ nvim]
+  (when-let [conn @nconn]
+    (js/debug "hi")
+    (.send conn #js {:op "clean-ns"}
+           (fn [err result]
+             (js/debug "clean-ns" err result))))
+  zloc)
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
@@ -220,7 +254,8 @@
           new-sexpr (-> sexpr
                         (z/of-string)
                         (z/find-last-by-pos pos #(not= (z/tag %) :whitespace))
-                        (transformer args nvim) ;; TODO should check if anything has changed
+                        (transformer args nvim)
+                        ;; TODO should check if anything has changed - should return nil if transformer returned nil
                         (z/root-string)
                         (paren-mode/format-text)
                         :text)]
@@ -280,11 +315,13 @@
   (try
    (when (exists? js/plugin)
      (js/debug "hello refactor")
-     (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
      (.commandSync js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform introduce-let))
      (.commandSync js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform expand-let))
      (.commandSync js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
-     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform add-missing-libspec)))
+     ;; REPL only commands
+     (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
+     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform add-missing-libspec))
+     (.commandSync js/plugin "CCleanNS" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform clean-ns)))
    (catch js/Error e
      (js/debug "main exception" e))))
 
