@@ -82,6 +82,23 @@
            (z/leftmost))) ; move to let
       let-loc)))
 
+(defn move-to-let
+  "Adds form and symbol to a let further up the tree"
+  [zloc [binding-name]]
+  (let [bound-node (z/node zloc)
+        binding-sym (symbol binding-name)]
+    (if-let [let-loc (z/find-value zloc z/prev 'let)] ; find first ancestor let
+      (-> zloc
+          (z/remove) ; remove bound-node and newline
+          (z/insert-right (n/newline-node "\n")) ; newline to be placed after binding-symbol
+          (z/insert-right binding-sym) ; replace it with binding-symbol
+          (z/find-value z/prev 'let) ; move to ancestor let
+          (z/next) ; move to binding
+          (z/append-child (n/newline-node "\n")) ; insert let and bindings backwards
+          (z/append-child binding-sym) ; add binding symbol
+          (z/append-child bound-node)) ; readd bound node into let bindings
+      zloc)))
+
 ;; TODO replace bound forms that are being expanded around
 (defn expand-let
   "Expand the scope of the next let up the tree."
@@ -238,25 +255,26 @@
 
 (defn connect-to-repl [nvim parent-directory]
   (try
-    (let [dirs (reductions conj [] (string/split parent-directory #"/" -1))
-          directories (reverse (remove #{""} (map (partial string/join "/") dirs)))
-          port-files (map #(str % "/.nrepl-port") directories)
-          valid-files (filter file-exists? port-files)]
-      (when-let [port-file (first valid-files)]
-        (let [port (js/parseInt (slurp port-file))
-              client (js/require "nrepl-client")
-              connection (.connect client #js {:port port})]
+   (let [dirs (reductions conj [] (string/split parent-directory #"/" -1))
+         directories (reverse (remove #{""} (map (partial string/join "/") dirs)))
+         port-files (map #(str % "/.nrepl-port") directories)
+         valid-files (filter file-exists? port-files)]
+     (if-let [port-file (first valid-files)]
+       (let [port (js/parseInt (slurp port-file))
+             client (js/require "nrepl-client")
+             connection (.connect client #js {:port port})]
          (when-not @nconn
-          (.on connection "error"
-                        (fn [err]
-                          (js/debug "disconnected" err)
-                          (reset! nconn nil)))
-          (.once connection "connect"
-                     (fn []
-                       (js/debug "connected" port (pr-str connection))
-                       (reset! nconn connection)))))))
-    (catch :default e
-      (js/debug "EXCEPTION" e))))
+           (.on connection "error"
+                (fn [err]
+                  (js/debug "disconnected" err)
+                  (reset! nconn nil)))
+           (.once connection "connect"
+                  (fn []
+                    (js/debug "connected" port (pr-str connection))
+                    (reset! nconn connection)))))
+       (js/debug "Can't find .nrepl-port in" (first directories))))
+   (catch :default e
+     (js/debug "EXCEPTION" e))))
 
 (defn -main []
   (try
@@ -265,6 +283,7 @@
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
      (.commandSync js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform introduce-let))
      (.commandSync js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform expand-let))
+     (.commandSync js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
      (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform add-missing-libspec)))
    (catch js/Error e
      (js/debug "main exception" e))))
