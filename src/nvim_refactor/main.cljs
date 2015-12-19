@@ -150,13 +150,28 @@
   "Adds a declaration for the current symbol above the current top level form"
   [zloc _]
   (let [node (z/sexpr zloc)]
-    (cdbg node)
     (if (symbol? node)
       (-> zloc
-          (exec-to z/up #(not (top? %)))
-          (z/insert-left (list 'declare node))
-          (z/insert-left (n/newline-node "\n\n")) ; add new line after location
-          zdbg)
+          (exec-to z/up #(not (top? %))) ; Go to top level form
+          (z/insert-left (list 'declare node)) ; add declare
+          (z/insert-left (n/newline-node "\n\n"))) ; add new line after location
+      zloc)))
+
+(defn cycle-coll
+  "Cycles collection between vector, list, map and set"
+  [zloc _]
+  (let [sexpr (z/sexpr zloc)]
+    (if (coll? sexpr)
+      (let [node (z/node zloc)
+            coerce-to-next (fn [sexpr children]
+                             (cond
+                              (map? sexpr) (n/vector-node children)
+                              (vector? sexpr) (n/set-node children)
+                              (set? sexpr) (n/list-node children)
+                              (list? sexpr) (n/map-node children)))]
+        (-> zloc
+            (z/insert-right (coerce-to-next sexpr (n/children node)))
+            (z/remove)))
       zloc)))
 
 ;; TODO this can probably escape the ns form - need to root the search it somehow (z/.... (z/node zloc))
@@ -347,6 +362,7 @@
      (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform expand-let))
      (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
      (.command js/plugin "CAddDeclaration" #js {:eval "getpos('.')" :nargs 0} (partial run-transform add-declaration))
+     (.command js/plugin "CCycleColl" #js {:eval "getpos('.')" :nargs 0} (partial run-transform cycle-coll))
      ;; REPL only commands
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
      (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0} add-missing-libspec)
