@@ -1,9 +1,9 @@
 (ns nvim-refactor.main
   (:require
    [cljs.reader :as reader]
-   [clojure.string :as string]
    [clojure.zip :as zz]
    [parinfer.paren-mode :as paren-mode]
+   [clojure.string :as string]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]
    [rewrite-clj.parser :as parser]
@@ -155,6 +155,12 @@
         z/rightmost
         z/down)))
 
+(defn find-namespace [zloc]
+  (-> zloc
+      (z/find z/up #(= nf/FormsNode (type (z/node %)))) ; go to outer form
+      (z/find-next-value z/next 'ns) ; go to ns
+      (z/up))) ; ns form
+
 ;; TODO will insert duplicates
 ;; TODO handle :type and :macro
 (defn add-candidate
@@ -162,9 +168,7 @@
   [zloc [missing missing-type sym-ns]]
   (try
    (-> zloc
-       (z/find z/up #(= nf/FormsNode (type (z/node %)))) ; go to outer form
-       (z/find-next-value z/next 'ns) ; go to ns
-       (z/up) ; ns form
+       (find-namespace)
        (cond->
          (= missing-type :class)
          (->
@@ -225,25 +229,33 @@
 (defn add-missing-libspec
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
-  [zloc _ nvim]
+  [nvim _ word]
   (when-let [conn @nconn]
-    (let [sym (cdbg (z/sexpr zloc))]
+    (let [sym (cdbg (symbol (cdbg word)))]
       (js/debug "sending" (pr-str conn))
       (if (namespace sym)
         (nrepl-namespace-aliases conn nvim sym)
-        (nrepl-resolve-missing conn nvim sym))))
-  zloc)
+        (nrepl-resolve-missing conn nvim sym)))))
+
+(defn replace-ns
+  [zloc [new-ns]]
+  (cdbg new-ns)
+  (-> zloc
+      (find-namespace)
+      (z/insert-right new-ns)
+      (z/remove)))
 
 (defn clean-ns
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
-  [zloc _ nvim]
+  [nvim _ path]
   (when-let [conn @nconn]
-    (js/debug "hi")
-    (.send conn #js {:op "clean-ns"}
-           (fn [err result]
-             (js/debug "clean-ns" err result))))
-  zloc)
+    (js/debug "hi" path "foo")
+    (.send conn #js {:op "clean-ns" :path path :prefix-rewriting "false"}
+           (fn [err results]
+             (js/debug "clean-ns" err)
+             (when-let [cstr (cdbg (aget (first results) "ns"))]
+               (run-transform replace-ns nvim [(parser/parse-string cstr)] [1 1 1 1]))))))
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
@@ -263,14 +275,14 @@
     (catch :default e
       (js/debug "zip-it" e (.-stack e)))))
 
-(defn run-transform [transformer nvim args [_ row col _]]
+(defn run-transform [transformer nvim args [_ row col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
   (try
    (.getCurrentBuffer nvim
                       (fn [err buf]
                         (.getLineSlice buf 0 -1 true true
                                        (fn [err lines]
-                                         (when-let [new-lines (clj->js (zip-it transformer nvim (js->clj lines) row col args))]
+                                         (when-let [new-lines (clj->js (zip-it transformer nvim (js->clj lines) row col (cdbg (concat args static-args))))]
                                            (.setLineSlice buf 0 -1 true true new-lines))))))
    (catch :default e
      (js/debug "run-transform" e))))
@@ -288,7 +300,7 @@
       (catch :default e
         false))))
 
-(defn connect-to-repl [nvim parent-directory]
+(defn connect-to-repl [_ parent-directory]
   (try
    (let [dirs (reductions conj [] (string/split parent-directory #"/" -1))
          directories (reverse (remove #{""} (map (partial string/join "/") dirs)))
@@ -302,7 +314,8 @@
            (.on connection "error"
                 (fn [err]
                   (js/debug "disconnected" err)
-                  (reset! nconn nil)))
+                  (reset! nconn nil)
+                  (connect-to-repl nil parent-directory)))
            (.once connection "connect"
                   (fn []
                     (js/debug "connected" port (pr-str connection))
@@ -320,9 +333,10 @@
      (.commandSync js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
      ;; REPL only commands
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
-     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform add-missing-libspec))
-     (.commandSync js/plugin "CCleanNS" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform clean-ns)))
+     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs "0"} add-missing-libspec)
+     (.commandSync js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs "0"} clean-ns))
    (catch js/Error e
      (js/debug "main exception" e))))
 
 (set! *main-cli-fn* -main)
+
