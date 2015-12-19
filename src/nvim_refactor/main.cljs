@@ -16,6 +16,9 @@
 
 (defonce nconn (atom nil))
 
+(defn top? [loc]
+  (= nf/FormsNode (type (z/node loc))))
+
 (defn jdbg [val]
   (js/debug val)
   val)
@@ -35,8 +38,7 @@
   (->> loc
        (iterate f)
        (take-while p?)
-       last
-       f))
+       last))
 
 (defn parent-let? [zloc]
   (= 'let (-> zloc z/up z/leftmost z/sexpr)))
@@ -144,6 +146,19 @@
         (z/leftmost) ; back to let
         (join-let)))) ; join if let above
 
+(defn add-declaration
+  "Adds a declaration for the current symbol above the current top level form"
+  [zloc _]
+  (let [node (z/sexpr zloc)]
+    (cdbg node)
+    (if (symbol? node)
+      (-> zloc
+          (exec-to z/up #(not (top? %)))
+          (z/insert-left (list 'declare node))
+          (z/insert-left (n/newline-node "\n\n")) ; add new line after location
+          zdbg)
+      zloc)))
+
 ;; TODO this can probably escape the ns form - need to root the search it somehow (z/.... (z/node zloc))
 (defn find-or-create-libspec [zloc v]
   (if-let [zfound (z/find-next-value zloc z/next v)]
@@ -157,7 +172,7 @@
 
 (defn find-namespace [zloc]
   (-> zloc
-      (z/find z/up #(= nf/FormsNode (type (z/node %)))) ; go to outer form
+      (z/find z/up top?) ; go to outer form
       (z/find-next-value z/next 'ns) ; go to ns
       (z/up))) ; ns form
 
@@ -328,15 +343,15 @@
   (try
    (when (exists? js/plugin)
      (js/debug "hello refactor")
-     (.commandSync js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform introduce-let))
-     (.commandSync js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform expand-let))
-     (.commandSync js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
+     (.command js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform introduce-let))
+     (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform expand-let))
+     (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
+     (.command js/plugin "CAddDeclaration" #js {:eval "getpos('.')" :nargs 0} (partial run-transform add-declaration))
      ;; REPL only commands
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
-     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs "0"} add-missing-libspec)
-     (.commandSync js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs "0"} clean-ns))
+     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0} add-missing-libspec)
+     (.commandSync js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0} clean-ns))
    (catch js/Error e
      (js/debug "main exception" e))))
 
 (set! *main-cli-fn* -main)
-
