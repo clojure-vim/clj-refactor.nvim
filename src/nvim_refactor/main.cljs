@@ -1,8 +1,10 @@
 (ns nvim-refactor.main
   (:require
+   [cljs.nodejs :as nodejs]
    [cljs.reader :as reader]
    [clojure.zip :as zz]
-   [parinfer.paren-mode :as paren-mode]
+   [nvim-refactor.edit :as edit]
+   [parinfer :as parinfer]
    [clojure.string :as string]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]
@@ -11,24 +13,29 @@
    [rewrite-clj.zip :as z]
    [rewrite-clj.zip.base :as zb]
    [rewrite-clj.zip.findz :as zf]
+   [rewrite-clj.zip.removez :as zr]
    [rewrite-clj.zip.utils :as zu]
    [rewrite-clj.zip.whitespace :as ws]))
+
+(nodejs/enable-util-print!)
 
 (defonce nconn (atom nil))
 
 (defn top? [loc]
   (= nf/FormsNode (type (z/node loc))))
 
-(defn jdbg [val]
-  (js/debug val)
+(defn jdbg [val & args]
+  (if (exists? js/debug)
+    (apply js/debug val args)
+    (apply println val args))
   val)
 
 (defn cdbg [val]
-  (js/debug (pr-str val))
+  (jdbg (pr-str val))
   val)
 
 (defn zdbg [loc]
-  (js/debug (pr-str (z/sexpr loc)))
+  (jdbg (pr-str (z/sexpr loc)))
   loc)
 
 (defn split-lines [s]
@@ -43,23 +50,8 @@
 (defn parent-let? [zloc]
   (= 'let (-> zloc z/up z/leftmost z/sexpr)))
 
-(defn remove-left [zloc]
-  (-> zloc
-    (zu/remove-left-while ws/whitespace?)
-    (zu/remove-left-while (complement ws/whitespace?))))
-
-(defn remove-right [zloc]
-  (-> zloc
-    (z/remove)
-    (z/next)))
-
-(defn transpose-backwards [zloc]
-  (let [n (z/node zloc)]
-    (-> zloc
-        remove-right
-        z/left
-        (z/insert-left n)
-        z/left)))
+(defn transpose-backwards
+  [zloc])
 
 ;; TODO Is this safe?
 (defn join-let
@@ -68,7 +60,6 @@
   (let [bind-node (z/node (z/next let-loc))]
     (if (parent-let? let-loc)
       (do
-       (cdbg "joining")
        (-> let-loc
            (z/right) ; move to inner binding
            (z/right) ; move to inner body
@@ -79,7 +70,8 @@
            (z/down) ; move into binding
            (z/rightmost) ; move to nested binding
            (z/splice) ; remove nesting
-           (z/insert-left (n/newline-node "\n"))
+           (z/left)
+           (ws/append-newline)
            (z/up) ; move to new binding
            (z/leftmost))) ; move to let
       let-loc)))
@@ -92,7 +84,7 @@
     (if-let [let-loc (z/find-value zloc z/prev 'let)] ; find first ancestor let
       (-> zloc
           (z/remove) ; remove bound-node and newline
-          (z/insert-right (n/newline-node "\n")) ; newline to be placed after binding-symbol
+          (ws/append-newline) ; newline to be placed after binding-symbol
           (z/insert-right binding-sym) ; replace it with binding-symbol
           (z/find-value z/prev 'let) ; move to ancestor let
           (z/next) ; move to binding
@@ -114,10 +106,8 @@
       (-> let-loc
           (z/up) ; move to form above
           (z/splice) ; splice in let
-
-          (remove-right) ; remove let
-          (remove-right) ; remove binding
-
+          (edit/remove-right) ; remove let
+          (edit/remove-right) ; remove binding
           (z/leftmost) ; go to front of form above
           (z/up) ; go to form container
           (p/wrap-around :list) ; wrap with new let list
@@ -174,6 +164,19 @@
             (z/remove)))
       zloc)))
 
+(defn cycle-if
+  "Cycles between if and if-not form"
+  [zloc _]
+  (if-let [if-loc (z/find-value zloc z/prev #{'if 'if-not})] ; find first ancestor if
+    (-> if-loc
+        (z/insert-right (if (= 'if (z/sexpr if-loc)) 'if-not 'if)) ; add inverse if / if-not
+        (z/remove) ; remove original if/if-not
+        (z/down) ; go back to new if
+        (z/rightmost) ; Go to last child (true form)
+        (z/right) ; Go to last child (true form)
+        (transpose-backwards)) ; Swap children
+    zloc))
+
 ;; TODO this can probably escape the ns form - need to root the search it somehow (z/.... (z/node zloc))
 (defn find-or-create-libspec [zloc v]
   (if-let [zfound (z/find-next-value zloc z/next v)]
@@ -218,7 +221,8 @@
           (z/append-child :as) ; add :as
           (z/append-child (symbol sym-ns))))) ; as prefix
    (catch :default e
-     (js/debug "EXCEPTION" e e.stack))))
+     (jdbg "EXCEPTION" e e.stack)
+     (throw e))))
 
 (declare run-transform)
 
@@ -229,15 +233,15 @@
          (fn [err results]
            (try
             (let [cstr (aget (first results) "candidates")
-                  candidates (reader/read-string (cdbg cstr))]
+                  candidates (reader/read-string cstr)]
               (cdbg candidates)
               (when (> (count candidates) 1)
-                (js/debug "More than one candidate!"))
+                (jdbg "More than one candidate!"))
               ;; take first one for now - maybe can get input() choice
               (when-let [[missing missing-type] (first candidates)]
                 (run-transform add-candidate nvim [missing missing-type (namespace sym)] [1 1 1 1]))) ; fake cursor
             (catch :default e
-              (js/debug "add-missing response exception" e e.stack))))))
+              (jdbg "add-missing response exception" e e.stack))))))
 
 (defn nrepl-namespace-aliases
   "Try to add a ns libspec based on already used aliases.
@@ -249,27 +253,26 @@
             (let [cstr (aget (first results) "namespace-aliases")
                   aliases (reader/read-string cstr)
                   sym-ns (namespace sym)]
-              (if-let [missing (cdbg (first (get-in aliases [:clj (symbol sym-ns)])))]
+              (if-let [missing (first (get-in aliases [:clj (symbol sym-ns)]))]
                 (run-transform add-candidate nvim [missing :ns sym-ns] [1 1 1 1])
                 (nrepl-resolve-missing conn nvim sym)))
 
             (catch :default e
-              (js/debug "add-missing namespace-aliases" e e.stack))))))
+              (jdbg "add-missing namespace-aliases" e e.stack))))))
 
 (defn add-missing-libspec
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
   [nvim _ word]
   (when-let [conn @nconn]
-    (let [sym (cdbg (symbol (cdbg word)))]
-      (js/debug "sending" (pr-str conn))
+    (let [sym (symbol word)]
+      (jdbg "sending" (pr-str conn))
       (if (namespace sym)
         (nrepl-namespace-aliases conn nvim sym)
         (nrepl-resolve-missing conn nvim sym)))))
 
 (defn replace-ns
   [zloc [new-ns]]
-  (cdbg new-ns)
   (-> zloc
       (find-namespace)
       (z/insert-right new-ns)
@@ -280,30 +283,32 @@
   When the repl comes back with response, run transform to add to ns"
   [nvim _ path]
   (when-let [conn @nconn]
-    (js/debug "hi" path "foo")
     (.send conn #js {:op "clean-ns" :path path :prefix-rewriting "false"}
            (fn [err results]
-             (js/debug "clean-ns" err)
-             (when-let [cstr (cdbg (aget (first results) "ns"))]
+             (jdbg "clean-ns" err)
+             (when-let [cstr (aget (first results) "ns")]
                (run-transform replace-ns nvim [(parser/parse-string cstr)] [1 1 1 1]))))))
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
-  [transformer nvim lines row col args]
+  [transformer lines row col args]
   (try
     (let [sexpr (string/join "\n" lines)
-          pos (cdbg {:row row :col col :end-row row :end-col col})
+          pos {:row row :col col :end-row row :end-col col}
           new-sexpr (-> sexpr
                         (z/of-string)
                         (z/find-last-by-pos pos #(not= (z/tag %) :whitespace))
-                        (transformer args nvim)
-                        ;; TODO should check if anything has changed - should return nil if transformer returned nil
+                        (transformer args)
+                        ;; TODO should check if anything has changed
+                        ;; - should return nil if transformer returned nil
                         (z/root-string)
-                        (paren-mode/format-text)
-                        :text)]
+                        (parinfer/parenMode)
+                        (js->clj)
+                        (get "text"))]
       (split-lines new-sexpr))
     (catch :default e
-      (js/debug "zip-it" e (.-stack e)))))
+      (jdbg "zip-it" e (.-stack e))
+      (throw e))))
 
 (defn run-transform [transformer nvim args [_ row col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
@@ -312,10 +317,10 @@
                       (fn [err buf]
                         (.getLineSlice buf 0 -1 true true
                                        (fn [err lines]
-                                         (when-let [new-lines (clj->js (zip-it transformer nvim (js->clj lines) row col (cdbg (concat args static-args))))]
+                                         (when-let [new-lines (clj->js (zip-it transformer (js->clj lines) row col (concat args static-args)))]
                                            (.setLineSlice buf 0 -1 true true new-lines))))))
    (catch :default e
-     (js/debug "run-transform" e))))
+     (jdbg "run-transform" e))))
 
 (defn slurp [filename]
   (let [fs (js/require "fs")
@@ -343,31 +348,33 @@
          (when-not @nconn
            (.on connection "error"
                 (fn [err]
-                  (js/debug "disconnected" err)
+                  (jdbg "disconnected" err)
                   (reset! nconn nil)
                   (connect-to-repl nil parent-directory)))
            (.once connection "connect"
                   (fn []
-                    (js/debug "connected" port (pr-str connection))
+                    (jdbg "connected" port (pr-str connection))
                     (reset! nconn connection)))))
-       (js/debug "Can't find .nrepl-port in" (first directories))))
+       (jdbg "Can't find .nrepl-port in" (first directories))))
    (catch :default e
-     (js/debug "EXCEPTION" e))))
+     (jdbg "EXCEPTION" e)
+     (throw e))))
 
 (defn -main []
   (try
    (when (exists? js/plugin)
-     (js/debug "hello refactor")
+     (jdbg "hello refactor")
      (.command js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform introduce-let))
      (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"} (partial run-transform expand-let))
      (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform move-to-let))
      (.command js/plugin "CAddDeclaration" #js {:eval "getpos('.')" :nargs 0} (partial run-transform add-declaration))
      (.command js/plugin "CCycleColl" #js {:eval "getpos('.')" :nargs 0} (partial run-transform cycle-coll))
+     (.command js/plugin "CCycleIf" #js {:eval "getpos('.')" :nargs 0} (partial run-transform cycle-if))
      ;; REPL only commands
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
-     (.commandSync js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0} add-missing-libspec)
-     (.commandSync js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0} clean-ns))
+     (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0} add-missing-libspec)
+     (.command js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0} clean-ns))
    (catch js/Error e
-     (js/debug "main exception" e))))
+     (jdbg "main exception" e))))
 
 (set! *main-cli-fn* -main)

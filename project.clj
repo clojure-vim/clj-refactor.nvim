@@ -5,11 +5,11 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.170"]
                  [org.clojure/core.async "0.2.374" :exclusions [org.clojure/tools.reader]]
-                 [rewrite-cljs "0.3.1"]
-                 [parinfer "0.1.0"]]
+                 [rewrite-cljs "0.3.1"]]
 
   :npm {:dependencies [[nrepl-client "0.2.3"]
-                       [source-map-support "0.3.3"]]}
+                       [source-map-support "0.3.3"]
+                       [parinfer "1.4.0"]]}
 
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-figwheel "0.5.0"]
@@ -33,6 +33,10 @@
                                    :optimizations :simple
                                    :target :nodejs
                                    :cache-analysis true
+                                   :foreign-libs [{:file "node_modules/parinfer/parinfer.js"
+                                                   :provides ["parinfer"]
+                                                   :module-type :commonjs}]
+                                   :closure-warnings {:const :off}
                                    :source-map "rplugin/nvim-refactor.js.map"}}
                        {:id "fig-test"
                         :source-paths ["src" "test"]
@@ -41,5 +45,9 @@
                                    :output-to "target/out/tests.js"
                                    :output-dir "target/out"
                                    :target :nodejs
+                                   :foreign-libs [{:file "node_modules/parinfer/parinfer.js"
+                                                   :provides ["parinfer"]
+                                                   :module-type :commonjs}]
+                                   :closure-warnings {:const :off}
                                    :optimizations :none
                                    :source-map true}}]})

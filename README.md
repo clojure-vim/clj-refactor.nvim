@@ -28,7 +28,8 @@ Plugin 'snoe/nvim-refactor.js'
 - [x] [add-declaration](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-declaration.gif)
 - [ ] [add-import](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-import.gif)
 - [ ] [add-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-libspec.gif)
-- [x] [add-missing-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-missing-libspec.gif)
+- [x] [add-missing-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-missing-libspec.gif) 
+-- * Combined with magic-requires
 - [ ] [add-project-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-project-dependency.gif)
 - [ ] [add-stubs](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-stubs.gif)
 - [x] [clean-ns](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/clean-ns.gif)
@@ -46,6 +47,7 @@ Plugin 'snoe/nvim-refactor.js'
 - [ ] [describe-refactor](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/describe-refactor.gif)
 - [ ] [destructure-keys](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/destructure-keys.gif)
 - [x] [expand-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/expand-let.gif)
+-- * Doesn't yet replace other usages of bindings
 - [ ] [extract-fn](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/extract-fn.gif)
 - [ ] [find-usages](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/find-usages.gif)
 - [ ] [hotload-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/hotload-dependency.gif)
