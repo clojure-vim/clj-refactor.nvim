@@ -1,5 +1,7 @@
 (ns nvim-refactor.edit
  (:require
+   [rewrite-clj.node :as n]
+   [rewrite-clj.node.forms :as nf]
    [rewrite-clj.paredit :as p]
    [rewrite-clj.zip :as z]
    [rewrite-clj.zip.utils :as zu]
@@ -7,6 +9,10 @@
 
 (defn top? [loc]
   (= nf/FormsNode (type (z/node loc))))
+
+(defn zdbg [loc]
+  (doto (z/sexpr loc) prn)
+  loc)
 
 (defn exec-to [loc f p?]
   (->> loc
@@ -41,31 +47,36 @@
       let-loc)))
 
 (defn remove-right [zloc]
-  (cond
-   (and (z/rightmost? zloc)
-        (z/leftmost? zloc))
-   (-> zloc
-     (z/remove))
-
-   (z/rightmost? zloc)
-   (z/remove zloc)
-
-   :else
-   (-> zloc
-       (z/right)
-       (z/remove))))
+  (-> zloc
+    (zu/remove-right-while ws/whitespace?)
+    (zu/remove-right-while (complement ws/whitespace?))))
 
 (defn remove-left [zloc]
   (-> zloc
     (zu/remove-left-while ws/whitespace?)
     (zu/remove-left-while (complement ws/whitespace?))))
 
-(defn transpose-backwards
-  [zloc])
+(defn transpose-with-left
+  [zloc]
+  (if (z/leftmost? zloc)
+    zloc
+    (let [this-node (z/node zloc)]
+      (-> zloc
+          (z/remove)
+          (z/insert-left this-node)))))
+
+(defn transpose-with-right
+  [zloc]
+  (if (z/rightmost? zloc)
+    zloc
+    (let [right-node (z/node (z/right zloc))]
+      (-> zloc
+          (remove-right)
+          (z/insert-left right-node)))))
 
 (defn find-namespace [zloc]
   (-> zloc
-      (z/find z/up edit/top?) ; go to outer form
+      (z/find z/up top?) ; go to outer form
       (z/find-next-value z/next 'ns) ; go to ns
       (z/up))) ; ns form
 
@@ -78,4 +89,5 @@
         (z/append-child (list v))
         z/down
         z/rightmost
+        z/down
         z/down)))

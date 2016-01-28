@@ -32,12 +32,10 @@
   (jdbg (pr-str val))
   val)
 
-(defn zdbg [loc]
-  (jdbg (pr-str (z/sexpr loc)))
-  loc)
-
 (defn split-lines [s]
   (string/split s #"\r?\n" -1))
+
+(def fake-cursor [1 1 1 1])
 
 (declare run-transform)
 
@@ -47,14 +45,14 @@
   (.send conn #js {:op "resolve-missing" :symbol (str sym) :debug "true"}
          (fn [err results]
            (try
-            (let [cstr (aget (first results) "candidates")
+            (let [cstr (aget (cdbg (first results)) "candidates")
                   candidates (reader/read-string cstr)]
               (cdbg candidates)
               (when (> (count candidates) 1)
                 (jdbg "More than one candidate!"))
               ;; take first one for now - maybe can get input() choice
               (when-let [[missing missing-type] (first candidates)]
-                (run-transform transform/add-candidate nvim [missing missing-type (namespace sym)] [1 1 1 1]))) ; fake cursor
+                (run-transform transform/add-candidate nvim [missing missing-type (namespace sym)] fake-cursor)))
             (catch :default e
               (jdbg "add-missing response exception" e e.stack))))))
 
@@ -69,7 +67,7 @@
                   aliases (reader/read-string cstr)
                   sym-ns (namespace sym)]
               (if-let [missing (first (get-in aliases [:clj (symbol sym-ns)]))]
-                (run-transform transform/add-candidate nvim [missing :ns sym-ns] [1 1 1 1])
+                (run-transform transform/add-candidate nvim [missing :ns sym-ns] fake-cursor)
                 (nrepl-resolve-missing conn nvim sym)))
 
             (catch :default e
@@ -94,8 +92,9 @@
     (.send conn #js {:op "clean-ns" :path path :prefix-rewriting "false"}
            (fn [err results]
              (jdbg "clean-ns" err)
-             (when-let [cstr (aget (first results) "ns")]
-               (run-transform transform/replace-ns nvim [(parser/parse-string cstr)] [1 1 1 1]))))))
+             (if-let [cstr (aget (first results) "ns")]
+               (run-transform transform/replace-ns nvim [(parser/parse-string cstr)] fake-cursor)
+               (.command nvim "echo No results for refactor"))))))
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."

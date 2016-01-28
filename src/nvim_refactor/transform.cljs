@@ -115,7 +115,7 @@
         (z/down) ; go back to new if
         (z/rightmost) ; Go to last child (true form)
         (z/right) ; Go to last child (true form)
-        (edit/transpose-backwards)) ; Swap children
+        (edit/transpose-with-left)) ; Swap children
     zloc))
 
 ;; TODO will insert duplicates
