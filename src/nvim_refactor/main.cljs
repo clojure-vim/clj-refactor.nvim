@@ -44,15 +44,18 @@
   [conn nvim sym]
   (.send conn #js {:op "resolve-missing" :symbol (str sym) :debug "true"}
          (fn [err results]
+           (jdbg err results)
            (try
-            (let [cstr (aget (cdbg (first results)) "candidates")
-                  candidates (reader/read-string cstr)]
-              (cdbg candidates)
-              (when (> (count candidates) 1)
-                (jdbg "More than one candidate!"))
-              ;; take first one for now - maybe can get input() choice
-              (when-let [[missing missing-type] (first candidates)]
-                (run-transform transform/add-candidate nvim [missing missing-type (namespace sym)] fake-cursor)))
+            (let [cstr (jdbg (aget (jdbg (first results)) "candidates"))]
+              (if (seq cstr)
+                (let [candidates (reader/read-string cstr)]
+                  (cdbg candidates)
+                  (when (> (count candidates) 1)
+                    (jdbg "More than one candidate!"))
+                  ;; take first one for now - maybe can get input() choice
+                  (when-let [{:keys [name type]} (first candidates)]
+                    (run-transform transform/add-candidate nvim [name type (namespace sym)] fake-cursor))))
+              (.command nvim "echo 'No candidates'"))
             (catch :default e
               (jdbg "add-missing response exception" e e.stack))))))
 
@@ -69,7 +72,6 @@
               (if-let [missing (first (get-in aliases [:clj (symbol sym-ns)]))]
                 (run-transform transform/add-candidate nvim [missing :ns sym-ns] fake-cursor)
                 (nrepl-resolve-missing conn nvim sym)))
-
             (catch :default e
               (jdbg "add-missing namespace-aliases" e e.stack))))))
 
@@ -77,24 +79,24 @@
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
   [nvim _ word]
-  (when-let [conn @nconn]
+  (if-let [conn @nconn]
     (let [sym (symbol word)]
-      (jdbg "sending" (pr-str conn))
       (if (namespace sym)
         (nrepl-namespace-aliases conn nvim sym)
-        (nrepl-resolve-missing conn nvim sym)))))
+        (nrepl-resolve-missing conn nvim sym)))
+    (.command nvim "echo 'Cannot run, no repl connection'")))
 
 (defn clean-ns
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
   [nvim _ path]
-  (when-let [conn @nconn]
+  (if-let [conn @nconn]
     (.send conn #js {:op "clean-ns" :path path :prefix-rewriting "false"}
            (fn [err results]
              (jdbg "clean-ns" err)
-             (if-let [cstr (aget (first results) "ns")]
-               (run-transform transform/replace-ns nvim [(parser/parse-string cstr)] fake-cursor)
-               (.command nvim "echo No results for refactor"))))))
+             (when-let [cstr (aget (first results) "ns")]
+               (run-transform transform/replace-ns nvim [(parser/parse-string cstr)] fake-cursor))))
+    (.command nvim "echo 'Cannot run, no repl connection'")))
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
