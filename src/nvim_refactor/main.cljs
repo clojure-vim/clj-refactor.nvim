@@ -1,9 +1,9 @@
 (ns nvim-refactor.main
   (:require
    [cljs.nodejs :as nodejs]
-   [cljs.reader :as reader]
    [clojure.zip :as zz]
    [nvim-refactor.edit :as edit]
+   [nvim-refactor.repl :as repl]
    [nvim-refactor.transform :as transform]
    [parinfer :as parinfer]
    [clojure.string :as string]
@@ -20,8 +20,6 @@
 
 (nodejs/enable-util-print!)
 
-(defonce nconn (atom nil))
-
 (defn jdbg [val & args]
   (if (exists? js/debug)
     (apply js/debug val args)
@@ -35,68 +33,7 @@
 (defn split-lines [s]
   (string/split s #"\r?\n" -1))
 
-(def fake-cursor [1 1 1 1])
-
 (declare run-transform)
-
-(defn nrepl-resolve-missing
-  "Try to add a ns libspec based on whatever the middleware thinks."
-  [conn nvim sym]
-  (.send conn #js {:op "resolve-missing" :symbol (str sym) :debug "true"}
-         (fn [err results]
-           (jdbg err results)
-           (try
-            (let [cstr (jdbg (aget (jdbg (first results)) "candidates"))]
-              (if (seq cstr)
-                (let [candidates (reader/read-string cstr)]
-                  (cdbg candidates)
-                  (when (> (count candidates) 1)
-                    (jdbg "More than one candidate!"))
-                  ;; take first one for now - maybe can get input() choice
-                  (when-let [{:keys [name type]} (first candidates)]
-                    (run-transform transform/add-candidate nvim [name type (namespace sym)] fake-cursor))))
-              (.command nvim "echo 'No candidates'"))
-            (catch :default e
-              (jdbg "add-missing response exception" e e.stack))))))
-
-(defn nrepl-namespace-aliases
-  "Try to add a ns libspec based on already used aliases.
-  Falls back to `resolve-missing`."
-  [conn nvim sym]
-  (.send conn #js {:op "namespace-aliases" :debug "true"}
-         (fn [err results]
-           (try
-            (let [cstr (aget (first results) "namespace-aliases")
-                  aliases (reader/read-string cstr)
-                  sym-ns (namespace sym)]
-              (if-let [missing (first (get-in aliases [:clj (symbol sym-ns)]))]
-                (run-transform transform/add-candidate nvim [missing :ns sym-ns] fake-cursor)
-                (nrepl-resolve-missing conn nvim sym)))
-            (catch :default e
-              (jdbg "add-missing namespace-aliases" e e.stack))))))
-
-(defn add-missing-libspec
-  "Asks repl for the missing libspec.
-  When the repl comes back with response, run transform to add to ns"
-  [nvim _ word]
-  (if-let [conn @nconn]
-    (let [sym (symbol word)]
-      (if (namespace sym)
-        (nrepl-namespace-aliases conn nvim sym)
-        (nrepl-resolve-missing conn nvim sym)))
-    (.command nvim "echo 'Cannot run, no repl connection'")))
-
-(defn clean-ns
-  "Asks repl for the missing libspec.
-  When the repl comes back with response, run transform to add to ns"
-  [nvim _ path]
-  (if-let [conn @nconn]
-    (.send conn #js {:op "clean-ns" :path path :prefix-rewriting "false"}
-           (fn [err results]
-             (jdbg "clean-ns" err)
-             (when-let [cstr (aget (first results) "ns")]
-               (run-transform transform/replace-ns nvim [(parser/parse-string cstr)] fake-cursor))))
-    (.command nvim "echo 'Cannot run, no repl connection'")))
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
@@ -131,44 +68,6 @@
    (catch :default e
      (jdbg "run-transform" e))))
 
-(defn slurp [filename]
-  (let [fs (js/require "fs")
-        data (.readFileSync fs filename "utf8")]
-    data))
-
-(defn file-exists? [filename]
-  (let [fs (js/require "fs")]
-    (try
-      (.accessSync fs filename)
-      true
-      (catch :default e
-        false))))
-
-(defn connect-to-repl [_ parent-directory]
-  (try
-   (let [dirs (reductions conj [] (string/split parent-directory #"/" -1))
-         directories (reverse (remove #{""} (map (partial string/join "/") dirs)))
-         port-files (map #(str % "/.nrepl-port") directories)
-         valid-files (filter file-exists? port-files)]
-     (if-let [port-file (first valid-files)]
-       (let [port (js/parseInt (slurp port-file))
-             client (js/require "nrepl-client")
-             connection (.connect client #js {:port port})]
-         (when-not @nconn
-           (.on connection "error"
-                (fn [err]
-                  (jdbg "disconnected" err)
-                  (reset! nconn nil)
-                  (connect-to-repl nil parent-directory)))
-           (.once connection "connect"
-                  (fn []
-                    (jdbg "connected" port (pr-str connection))
-                    (reset! nconn connection)))))
-       (jdbg "Can't find .nrepl-port in" (first directories))))
-   (catch :default e
-     (jdbg "EXCEPTION" e)
-     (throw e))))
-
 (defn -main []
   (try
    (when (exists? js/plugin)
@@ -187,9 +86,17 @@
                (partial run-transform transform/cycle-if))
 
      ;; REPL only commands
-     (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"} connect-to-repl)
-     (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0} add-missing-libspec)
-     (.command js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0} clean-ns))
+     (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"}
+               repl/connect-to-repl)
+     (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0}
+               (partial repl/add-missing-libspec run-transform))
+     (.command js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0}
+               (partial repl/clean-ns run-transform))
+     (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"}
+               repl/rename-file)
+     (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"}
+               repl/rename-dir))
+
    (catch js/Error e
      (jdbg "main exception" e))))
 

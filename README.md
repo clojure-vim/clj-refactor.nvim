@@ -60,7 +60,7 @@ Plugin 'snoe/nvim-refactor.js'
 - [ ] [promote-fn](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/promote-fn.gif)
 - [ ] [remove-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/remove-let.gif)
 - [ ] [remove-unused-requires](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/remove-unused-requires.gif)
-- [ ] [rename-file-or-dir](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-file-or-dir.gif)
+- [x] [rename-file-or-dir](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-file-or-dir.gif)
 - [ ] [rename-symbol-global](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-global.gif)
 - [ ] [rename-symbol-local](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-local.gif)
 - [ ] [replace-use](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/replace-use.gif)
