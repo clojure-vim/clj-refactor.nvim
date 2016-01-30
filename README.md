@@ -41,7 +41,7 @@ Plugin 'snoe/nvim-refactor.js'
 - [ ] [cljr-toplevel-hydra](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cljr-toplevel-hydra.gif)
 - [ ] [create-fn-from-example](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/create-fn-from-example.gif)
 - [x] [cycle-coll](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-coll.gif)
-- [ ] [cycle-if](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-if.gif)
+- [x] [cycle-if](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-if.gif)
 - [ ] [cycle-privacy](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-privacy.gif)
 - [ ] [cycle-thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-thread.gif)
 - [ ] [describe-refactor](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/describe-refactor.gif)

@@ -110,11 +110,9 @@
   [zloc _]
   (if-let [if-loc (z/find-value zloc z/prev #{'if 'if-not})] ; find first ancestor if
     (-> if-loc
-        (z/insert-right (if (= 'if (z/sexpr if-loc)) 'if-not 'if)) ; add inverse if / if-not
+        (z/insert-left (if (= 'if (z/sexpr if-loc)) 'if-not 'if)) ; add inverse if / if-not
         (z/remove) ; remove original if/if-not
-        (z/down) ; go back to new if
         (z/rightmost) ; Go to last child (true form)
-        (z/right) ; Go to last child (true form)
         (edit/transpose-with-left)) ; Swap children
     zloc))
 

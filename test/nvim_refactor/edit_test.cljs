@@ -5,42 +5,33 @@
    [cljs.nodejs :as nodejs]
    [cljs.test :refer-macros [deftest is testing run-tests are]]
    [clojure.string :as str]
-   [nvim-refactor.edit :as e]))
-
-(defn zip-to
-  [form goto f]
-  (-> form
-      (str)
-      (z/of-string)
-      (z/find z/next #(= (z/sexpr %) goto))
-      (f)))
-
-(defn apply-zip-to
-  [form goto f]
-  (-> form
-      (zip-to goto f)
-      (z/sexpr)
-      (str)))
-
-(defn apply-zip
-  [form goto f]
-  (-> form
-      (zip-to goto f)
-      (z/root-string)))
+   [nvim-refactor.edit :as e]
+   [nvim-refactor.test-helper :refer [apply-zip apply-zip-to]]))
 
 (deftest test-remove-right
-  (are [i j] (= (str i) j)
+  (are [i j] (= i j)
     '(let x) (apply-zip '(let [x (+ 1 1)] x) 'let e/remove-right)
 
     '(let [x (+ 1 1)]) (apply-zip '(let [x (+ 1 1)] x) '[x (+ 1 1)] e/remove-right)
 
     '(let) (apply-zip '(let) 'let e/remove-right)
 
-    'x (apply-zip-to '(x y) 'x e/remove-right)))
+    'x (apply-zip-to '(x y) 'x e/remove-right)
+    '(x) (apply-zip '(x y) 'x e/remove-right)
 
+    'y (apply-zip-to '(x y) 'y e/remove-right)
+    '(x y) (apply-zip '(x y) 'y e/remove-right)))
+
+(deftest test-remove-left
+  (are [i j] (= i j)
+    'x (apply-zip-to '(x y) 'x e/remove-left)
+    '(x y) (apply-zip '(x y) 'x e/remove-left)
+
+    'y (apply-zip-to '(x y) 'y e/remove-left)
+    '(y) (apply-zip '(x y) 'y e/remove-left)))
 
 (deftest test-transpose-with-left
-  (are [i j] (= (str i) j)
+  (are [i j] (= i j)
     '(y x) (apply-zip '(x y) 'y e/transpose-with-left)
 
     '(x z y) (apply-zip '(x y z) 'z e/transpose-with-left)
@@ -54,7 +45,7 @@
     '([a b c] x y z) (apply-zip '(x [a b c] y z) '[a b c] e/transpose-with-left)))
 
 (deftest test-transpose-with-right
-  (are [i j] (= (str i) j)
+  (are [i j] (= i j)
     '(x y) (apply-zip '(x y) 'y e/transpose-with-right)
 
     '(x y z) (apply-zip '(x y z) 'z e/transpose-with-right)
