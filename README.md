@@ -23,6 +23,17 @@ Plugin 'snoe/nvim-refactor.js'
 - *restart* nvim
 - refactor
 
+### Development / Testing
+
+I generally have 4 terminals open:
+
+- `$ rlwrap lein figwheel`
+- `$ node target/out/tests.js`
+- `$ lein cljsbuild auto plugin`
+- `$ tail -f $NEOVIM_JS_DEBUG`
+
+Somewhere in your environment do `export NEOVIM_JS_DEBUG=~/nvimdebug.log` and neovim will dump messages from the plugin there. If something goes wrong it will likely show up in `~/.nvimlog`
+
 ### Progress
 
 - [x] [add-declaration](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-declaration.gif)
