@@ -21,8 +21,14 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 Plugin 'snoe/clj-refactor.nvim'
 ```
 
+In nvim run `:PluginInstall`
+
+### Download dependencies (this step should go away soon)
+
+- `cd ~/.config/nvim/bundle/clj-refactor.nvim/`
+- `lein npm install`
+
 ### Inside nvim
-- `:PluginInstall`
 - `:UpdateRemotePlugins` you should see `remote/host: node host registered plugins ['clj-refactor.nvim']` 
 - *restart* nvim
 - refactor
