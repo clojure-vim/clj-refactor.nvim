@@ -17,6 +17,11 @@
    [rewrite-clj.zip.utils :as zu]
    [rewrite-clj.zip.whitespace :as ws]))
 
+(defn zdbg
+  [zloc]
+  (println (z/sexpr zloc))
+  zloc)
+
 (defn introduce-let
   "Adds a let around the current form."
   [zloc [binding-name]]
@@ -116,23 +121,65 @@
         (edit/transpose-with-left)) ; Swap children
     zloc))
 
-(defn thread
-  [zloc _]
-  (if-let [first-loc (if (z/seq? zloc)
-                       (-> zloc (z/down) (z/right))
-                       (-> zloc (z/leftmost) (z/right)))]
+(defn find-op
+  [zloc]
+  (if (z/seq? zloc)
+    (z/down zloc)
+    (z/leftmost zloc)))
+
+(defn thread-sym
+  [zloc sym]
+  (if-let [first-loc (-> zloc (find-op) (z/right))]
     (let [first-node (z/node first-loc)
           parent-op (z/sexpr (z/leftmost (z/up first-loc)))
-          threaded? (= '-> parent-op)]
+          threaded? (= sym parent-op)]
         (js/debug (pr-str parent-op))
         (-> first-loc
             (z/remove)
             (z/up)
             ((fn [loc] (if threaded?
                          loc
-                         (-> loc (p/wrap-around :list) (z/insert-left '->)))))
+                         (-> loc (p/wrap-around :list) (z/insert-left sym)))))
             (z/insert-left first-node)))
     zloc))
+
+(defn thread
+  [zloc _]
+  (thread-sym zloc '->))
+
+(defn thread-last
+  [zloc _]
+  (thread-sym zloc '->>))
+
+(defn ensure-list
+  [zloc]
+  (if (z/seq? zloc)
+    (z/down zloc)
+    (p/wrap-around zloc :list)))
+
+(defn unwind-thread
+  [zloc _]
+  (let [oploc (find-op zloc)
+        thread-type (z/sexpr oploc)]
+    (if (contains? #{'-> '->>} thread-type)
+      (let [first-loc (z/right oploc)
+            first-node (z/node first-loc)
+            move-to-insert-pos (if (= '-> thread-type)
+                                 z/leftmost
+                                 z/rightmost)]
+        (-> first-loc
+            (z/right) ; move to form to unwind into
+            (edit/remove-left) ; remove threaded form
+            (ensure-list) ; make sure we're dealing with a wrapped fn
+            (move-to-insert-pos) ; move to pos based on thread type
+            (z/insert-right first-node)
+            (z/up)
+            ((fn [loc]
+               (if (z/rightmost? loc)
+                 (p/raise loc)
+                 loc)))))
+      zloc)))
+
 
 ;; TODO will insert duplicates
 ;; TODO handle :type and :macro

@@ -86,6 +86,10 @@
                (partial run-transform transform/cycle-if))
      (.command js/plugin "CThread" #js {:eval "getpos('.')" :nargs 0}
                (partial run-transform transform/thread))
+     (.command js/plugin "CThreadLast" #js {:eval "getpos('.')" :nargs 0}
+               (partial run-transform transform/thread-last))
+     (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0}
+               (partial run-transform transform/unwind-thread))
 
      ;; REPL only commands
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"}

@@ -1,4 +1,4 @@
-(ns nvim-refactor.edit-test
+(ns ^:figwheel-always nvim-refactor.edit-test
   (:require
    [rewrite-clj.paredit :as p]
    [rewrite-clj.zip :as z]
