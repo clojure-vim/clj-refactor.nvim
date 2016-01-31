@@ -85,6 +85,6 @@ Somewhere in your environment do `export NEOVIM_JS_DEBUG=~/nvimdebug.log` and ne
 - [ ] [thread-first-all](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread-first-all.gif)
 - [ ] [thread-last-all](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread-last-all.gif)
 - [x] `crtt` [thread-last](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread-last.gif)
-- [x] `crtj` [thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread.gif)
+- [x] `crth` [thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread.gif)
 - [ ] [unwind-all](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/unwind-all.gif)
 - [x] `cruw` [unwind-thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/unwind-thread.gif)
