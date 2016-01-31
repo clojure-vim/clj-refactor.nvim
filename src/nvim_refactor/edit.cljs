@@ -56,15 +56,6 @@
     (zu/remove-left-while ws/whitespace?)
     (zu/remove-left-while (complement ws/whitespace?))))
 
-(defn transpose-with-left
-  [zloc]
-  (if (z/leftmost? zloc)
-    zloc
-    (let [this-node (z/node zloc)]
-      (-> zloc
-          (z/remove)
-          (z/insert-left this-node)))))
-
 (defn transpose-with-right
   [zloc]
   (if (z/rightmost? zloc)
@@ -73,6 +64,15 @@
       (-> zloc
           (remove-right)
           (z/insert-left right-node)))))
+
+(defn transpose-with-left
+  [zloc]
+  (if (z/leftmost? zloc)
+    zloc
+    (let [left-node (z/node (z/left zloc))]
+      (-> zloc
+          (z/left)
+          (transpose-with-right)))))
 
 (defn find-namespace [zloc]
   (-> zloc

@@ -1,4 +1,4 @@
-(ns ^:figwheel-always nvim-refactor.transform-test
+(ns nvim-refactor.transform-test
     (:require [cljs.nodejs :as nodejs]
               [cljs.test :refer-macros [deftest is testing run-tests are]]
               [clojure.string :as str]
@@ -36,7 +36,8 @@
 (deftest testing-cycle-if
   (are [i j] (= i j)
     '(if-not a c b) (apply-zip '(if a b c) 'if t/cycle-if)
-    '(if a c b) (apply-zip '(if-not a b c) 'if-not t/cycle-if)))
+    '(if a c b) (apply-zip '(if-not a b c) 'if-not t/cycle-if)
+    '(if (pred a) (foo c) (wat b)) (apply-zip '(if-not (pred a) (wat b) (foo c)) 'if-not t/cycle-if)))
 
 (deftest testing-cycle-coll
   (are [i j] (= i j)

@@ -112,7 +112,7 @@
     (-> if-loc
         (z/insert-left (if (= 'if (z/sexpr if-loc)) 'if-not 'if)) ; add inverse if / if-not
         (z/remove) ; remove original if/if-not
-        (z/rightmost) ; Go to last child (true form)
+        (z/rightmost) ; Go to last child (else form)
         (edit/transpose-with-left)) ; Swap children
     zloc))
 

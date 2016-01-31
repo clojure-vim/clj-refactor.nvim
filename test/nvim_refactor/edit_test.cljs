@@ -1,4 +1,4 @@
-(ns ^:figwheel-always nvim-refactor.edit-test
+(ns nvim-refactor.edit-test
   (:require
    [rewrite-clj.paredit :as p]
    [rewrite-clj.zip :as z]
@@ -33,6 +33,8 @@
 (deftest test-transpose-with-left
   (are [i j] (= i j)
     '(y x) (apply-zip '(x y) 'y e/transpose-with-left)
+
+    '((a y) (b x)) (apply-zip '((b x) (a y)) '(a y) e/transpose-with-left)
 
     '(x z y) (apply-zip '(x y z) 'z e/transpose-with-left)
 
