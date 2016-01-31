@@ -9,6 +9,10 @@ A neovim port of [clj-refactor.el](https://github.com/clojure-emacs/clj-refactor
 
 [Install node-host](https://github.com/neovim/node-host)
 
+[Install refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
+
+[Install vim-fireplace](https://github.com/tpope/vim-fireplace)
+
 ### Vundle
 
 Using Vundle, add this to your vundle .config/nvim/init.vim section:
