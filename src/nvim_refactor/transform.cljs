@@ -47,14 +47,15 @@
   ;; TODO check that let is also leftmost?
   (let [let-loc (z/find-value zloc z/prev 'let)
         bind-node (z/node (z/next let-loc))]
-
     (if (edit/parent-let? let-loc)
       (edit/join-let let-loc)
       (-> let-loc
           (z/up) ; move to form above
           (z/splice) ; splice in let
-          (edit/remove-right) ; remove let
-          (edit/remove-right) ; remove binding
+          (z/right)
+          (z/right)
+          (edit/remove-left) ; remove let
+          (edit/remove-left) ; remove binding
           (z/leftmost) ; go to front of form above
           (z/up) ; go to form container
           (p/wrap-around :list) ; wrap with new let list
@@ -121,15 +122,9 @@
         (edit/transpose-with-left)) ; Swap children
     zloc))
 
-(defn find-op
-  [zloc]
-  (if (z/seq? zloc)
-    (z/down zloc)
-    (z/leftmost zloc)))
-
 (defn thread-sym
   [zloc sym]
-  (if-let [first-loc (-> zloc (find-op) (z/right))]
+  (if-let [first-loc (-> zloc (edit/find-op) (z/right))]
     (let [first-node (z/node first-loc)
           parent-op (z/sexpr (z/leftmost (z/up first-loc)))
           threaded? (= sym parent-op)]
@@ -159,7 +154,7 @@
 
 (defn unwind-thread
   [zloc _]
-  (let [oploc (find-op zloc)
+  (let [oploc (edit/find-op zloc)
         thread-type (z/sexpr oploc)]
     (if (contains? #{'-> '->>} thread-type)
       (let [first-loc (z/right oploc)

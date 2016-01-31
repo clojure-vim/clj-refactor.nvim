@@ -19,17 +19,17 @@
 
   :test-paths ["test"]
 
-  :clean-targets ["rplugin/nvim-refactor" "rplugin/nvim-refactor" "target"]
+  :clean-targets ["rplugin/nvim-refactor" "target"]
 
   :figwheel {:server-port 9443}
 
   :cljsbuild {:builds [{:id "plugin"
                         :source-paths ["src"]
                         :compiler {:main nvim-refactor.main
-                                   :asset-path "rplugin/nvim-refactor"
+                                   :asset-path "rplugin/node/nvim-refactor"
                                    :hashbang false
-                                   :output-to "rplugin/nvim-refactor.js"
-                                   :output-dir "rplugin/nvim-refactor"
+                                   :output-to "rplugin/node/nvim-refactor.js"
+                                   :output-dir "rplugin/node/nvim-refactor"
                                    :optimizations :simple
                                    :target :nodejs
                                    :cache-analysis true
@@ -37,7 +37,7 @@
                                                    :provides ["parinfer"]
                                                    :module-type :commonjs}]
                                    :closure-warnings {:const :off}
-                                   :source-map "rplugin/nvim-refactor.js.map"}}
+                                   :source-map "rplugin/node/nvim-refactor.js.map"}}
                        {:id "fig-test"
                         :source-paths ["src" "test"]
                         :figwheel {:on-jsload "nvim-refactor.main-test/test-it"}

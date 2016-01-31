@@ -39,7 +39,7 @@ Somewhere in your environment do `export NEOVIM_JS_DEBUG=~/nvimdebug.log` and ne
 - [x] [add-declaration](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-declaration.gif)
 - [ ] [add-import](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-import.gif)
 - [ ] [add-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-libspec.gif)
-- [x] [add-missing-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-missing-libspec.gif) * Combined with magic-requires
+- [x] [add-missing-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-missing-libspec.gif)
 - [ ] [add-project-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-project-dependency.gif)
 - [ ] [add-stubs](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-stubs.gif)
 - [x] [clean-ns](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/clean-ns.gif)
@@ -63,7 +63,7 @@ Somewhere in your environment do `export NEOVIM_JS_DEBUG=~/nvimdebug.log` and ne
 - [ ] [hotload-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/hotload-dependency.gif)
 - [ ] [inline-symbol](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/inline-symbol.gif)
 - [x] [introduce-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/introduce-let.gif)
-- [x] [magic-requires](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/magic-requires.gif)
+- [ ] [magic-requires](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/magic-requires.gif)
 - [ ] [move-form](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/move-form.gif)
 - [x] [move-to-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/move-to-let.gif)
 - [ ] [promote-fn-literal](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/promote-fn-literal.gif)

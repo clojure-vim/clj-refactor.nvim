@@ -23,6 +23,12 @@
 (defn parent-let? [zloc]
   (= 'let (-> zloc z/up z/leftmost z/sexpr)))
 
+(defn find-op
+  [zloc]
+  (if (z/seq? zloc)
+    (z/down zloc)
+    (z/leftmost zloc)))
+
 ;; TODO Is this safe?
 (defn join-let
   "if a let is directly above a form, will join binding forms and remove the inner let"
