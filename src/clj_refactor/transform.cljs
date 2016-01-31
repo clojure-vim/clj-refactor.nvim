@@ -1,9 +1,9 @@
-(ns nvim-refactor.transform
+(ns clj-refactor.transform
   (:require
    [cljs.nodejs :as nodejs]
    [cljs.reader :as reader]
    [clojure.zip :as zz]
-   [nvim-refactor.edit :as edit]
+   [clj-refactor.edit :as edit]
    [parinfer :as parinfer]
    [clojure.string :as string]
    [rewrite-clj.node :as n]

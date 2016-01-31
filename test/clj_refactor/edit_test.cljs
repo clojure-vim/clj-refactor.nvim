@@ -1,12 +1,12 @@
-(ns ^:figwheel-always nvim-refactor.edit-test
+(ns ^:figwheel-always clj-refactor.edit-test
   (:require
    [rewrite-clj.paredit :as p]
    [rewrite-clj.zip :as z]
    [cljs.nodejs :as nodejs]
    [cljs.test :refer-macros [deftest is testing run-tests are]]
    [clojure.string :as str]
-   [nvim-refactor.edit :as e]
-   [nvim-refactor.test-helper :refer [apply-zip apply-zip-to]]))
+   [clj-refactor.edit :as e]
+   [clj-refactor.test-helper :refer [apply-zip apply-zip-to]]))
 
 (deftest test-remove-right
   (are [i j] (= i j)

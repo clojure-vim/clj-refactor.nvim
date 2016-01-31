@@ -14,12 +14,12 @@ A neovim port of [clj-refactor.el](https://github.com/clojure-emacs/clj-refactor
 Using Vundle, add this to your vundle .config/nvim/init.vim section:
 
 ```
-Plugin 'snoe/nvim-refactor.js'
+Plugin 'snoe/clj-refactor.nvim'
 ```
 
 ### Inside nvim
 - `:PluginInstall`
-- `:UpdateRemotePlugins` you should see `remote/host: node host registered plugins ['nvim-refactor.js']` 
+- `:UpdateRemotePlugins` you should see `remote/host: node host registered plugins ['clj-refactor.nvim']` 
 - *restart* nvim
 - refactor
 

@@ -1,4 +1,4 @@
-(defproject nvim-refactor "0.1.0-SNAPSHOT"
+(defproject clj-refactor "0.1.0"
   :description ""
   :url ""
 
@@ -19,17 +19,17 @@
 
   :test-paths ["test"]
 
-  :clean-targets ["rplugin/nvim-refactor" "target"]
+  :clean-targets ["rplugin/clj-refactor" "target"]
 
   :figwheel {:server-port 9443}
 
   :cljsbuild {:builds [{:id "plugin"
                         :source-paths ["src"]
-                        :compiler {:main nvim-refactor.main
-                                   :asset-path "rplugin/node/nvim-refactor"
+                        :compiler {:main clj-refactor.main
+                                   :asset-path "rplugin/node/clj-refactor"
                                    :hashbang false
-                                   :output-to "rplugin/node/nvim-refactor.js"
-                                   :output-dir "rplugin/node/nvim-refactor"
+                                   :output-to "rplugin/node/clj-refactor.js"
+                                   :output-dir "rplugin/node/clj-refactor"
                                    :optimizations :simple
                                    :target :nodejs
                                    :cache-analysis true
@@ -37,11 +37,11 @@
                                                    :provides ["parinfer"]
                                                    :module-type :commonjs}]
                                    :closure-warnings {:const :off}
-                                   :source-map "rplugin/node/nvim-refactor.js.map"}}
+                                   :source-map "rplugin/node/clj-refactor.js.map"}}
                        {:id "fig-test"
                         :source-paths ["src" "test"]
-                        :figwheel {:on-jsload "nvim-refactor.main-test/test-it"}
-                        :compiler {:main nvim-refactor.main-test
+                        :figwheel {:on-jsload "clj-refactor.main-test/test-it"}
+                        :compiler {:main clj-refactor.main-test
                                    :output-to "target/out/tests.js"
                                    :output-dir "target/out"
                                    :target :nodejs

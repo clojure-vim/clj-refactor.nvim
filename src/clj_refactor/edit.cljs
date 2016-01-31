@@ -1,4 +1,4 @@
-(ns nvim-refactor.edit
+(ns clj-refactor.edit
  (:require
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]

@@ -1,9 +1,9 @@
-(ns nvim-refactor.repl
+(ns clj-refactor.repl
   (:require
    [cljs.reader :as reader]
    [clojure.string :as string]
    [rewrite-clj.parser :as parser]
-   [nvim-refactor.transform :as transform]
+   [clj-refactor.transform :as transform]
    [cljs.core.async :refer [close! chan <!]])
   (:require-macros
    [cljs.core.async.macros :refer [go]]))

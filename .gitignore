@@ -4,5 +4,5 @@
 /.lein-failures
 /figwheel_server.log
 /target
-/rplugin/node/nvim-refactor.js.map
-/rplugin/node/nvim-refactor/
+/rplugin/node/clj-refactor.js.map
+/rplugin/node/clj-refactor/

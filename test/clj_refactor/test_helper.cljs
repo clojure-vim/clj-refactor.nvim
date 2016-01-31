@@ -1,4 +1,4 @@
-(ns nvim-refactor.test-helper
+(ns clj-refactor.test-helper
   (:require
    [cljs.reader :as r]
    [rewrite-clj.zip :as z]))

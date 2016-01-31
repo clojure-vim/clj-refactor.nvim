@@ -1,10 +1,10 @@
-(ns ^:figwheel-always nvim-refactor.transform-test
+(ns ^:figwheel-always clj-refactor.transform-test
     (:require [cljs.nodejs :as nodejs]
               [cljs.test :refer-macros [deftest is testing run-tests are]]
               [clojure.string :as str]
-              [nvim-refactor.main :as m]
-              [nvim-refactor.transform :as t]
-              [nvim-refactor.test-helper :refer [apply-zip apply-zip-to]]))
+              [clj-refactor.main :as m]
+              [clj-refactor.transform :as t]
+              [clj-refactor.test-helper :refer [apply-zip apply-zip-to]]))
 
 (deftest testing-introduce-let
   (are [i j] (= i j)
