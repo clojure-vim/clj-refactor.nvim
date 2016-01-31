@@ -84,6 +84,8 @@
                (partial run-transform transform/cycle-coll))
      (.command js/plugin "CCycleIf" #js {:eval "getpos('.')" :nargs 0}
                (partial run-transform transform/cycle-if))
+     (.command js/plugin "CThread" #js {:eval "getpos('.')" :nargs 0}
+               (partial run-transform transform/thread))
 
      ;; REPL only commands
      (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"}

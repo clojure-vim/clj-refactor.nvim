@@ -116,6 +116,24 @@
         (edit/transpose-with-left)) ; Swap children
     zloc))
 
+(defn thread
+  [zloc _]
+  (if-let [first-loc (if (z/seq? zloc)
+                       (-> zloc (z/down) (z/right))
+                       (-> zloc (z/leftmost) (z/right)))]
+    (let [first-node (z/node first-loc)
+          parent-op (z/sexpr (z/leftmost (z/up first-loc)))
+          threaded? (= '-> parent-op)]
+        (js/debug (pr-str parent-op))
+        (-> first-loc
+            (z/remove)
+            (z/up)
+            ((fn [loc] (if threaded?
+                         loc
+                         (-> loc (p/wrap-around :list) (z/insert-left '->)))))
+            (z/insert-left first-node)))
+    zloc))
+
 ;; TODO will insert duplicates
 ;; TODO handle :type and :macro
 (defn add-candidate

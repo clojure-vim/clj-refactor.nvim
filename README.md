@@ -70,6 +70,6 @@ Plugin 'snoe/nvim-refactor.js'
 - [ ] [thread-first-all](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread-first-all.gif)
 - [ ] [thread-last-all](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread-last-all.gif)
 - [ ] [thread-last](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread-last.gif)
-- [ ] [thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread.gif)
+- [x] [thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/thread.gif)
 - [ ] [unwind-all](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/unwind-all.gif)
 - [ ] [unwind-thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/unwind-thread.gif)
