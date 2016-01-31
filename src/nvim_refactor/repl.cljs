@@ -3,7 +3,10 @@
    [cljs.reader :as reader]
    [clojure.string :as string]
    [rewrite-clj.parser :as parser]
-   [nvim-refactor.transform :as transform]))
+   [nvim-refactor.transform :as transform]
+   [cljs.core.async :refer [close! chan <!]])
+  (:require-macros
+   [cljs.core.async.macros :refer [go]]))
 
 (def fake-cursor [1 1 1 1])
 
@@ -18,9 +21,8 @@
             (let [cstr (aget (first results) "candidates")]
               (if (seq cstr)
                 (let [candidates (reader/read-string cstr)]
-                  (js/debug (pr-str candidates))
                   (when (> (count candidates) 1)
-                    (println "More than one candidate!"))
+                    (js/debug "More than one candidate!" candidates))
                   ;; take first one for now - maybe can get input() choice
                   (when-let [{:keys [name type]} (first candidates)]
                     (run-transform transform/add-candidate nvim [name type (namespace sym)] fake-cursor))))
@@ -91,6 +93,39 @@
                                      (aget (first results) "error") "\"")))))
       (.command nvim "echo 'Cannot run, no repl connection'")))
 
+(defn extract-definition
+  [transform-fn nvim args [project-dir info [_ row col _]]]
+  (if-let [conn @nconn]
+    (let [ns (aget info "ns")
+          name (aget info "name")
+          file (aget info "file")]
+      (.send conn #js {:op "extract-definition"
+                       :file (string/replace file #"^file:" "")
+                       :dir project-dir
+                       :ns ns
+                       :name name
+                       :line row
+                       :column col}
+             (fn [err results]
+               (js/debug "extract-definition" err results)
+               (let [edn (aget (first results) "definition")
+                     defs (reader/read-string edn)]
+                 (apply transform-fn nvim ns name defs args)))))))
+
+(defn rename-symbol
+  [nvim sym-ns sym-name defs new-symbol]
+  (go
+    (let [wait-ch (chan)]
+      (doseq [occurrence (conj (:occurrences defs) (:definition defs))
+              :let [{:keys [line-beg col-beg file name]} occurrence]]
+        (.command nvim (str "e " file " | "
+                            "call cursor(" line-beg "," col-beg ") | "
+                            "exe \"normal /" sym-name "\ncw" new-symbol "\" | "
+                            "s")
+                  (fn [err]
+                    (close! wait-ch)))
+        (<! wait-ch)))))
+
 (defn slurp [filename]
   (let [fs (js/require "fs")
         data (.readFileSync fs filename "utf8")]
@@ -128,4 +163,3 @@
    (catch :default e
      (js/debug "EXCEPTION" e)
      (throw e))))
-

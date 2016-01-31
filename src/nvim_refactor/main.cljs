@@ -95,7 +95,10 @@
      (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"}
                repl/rename-file)
      (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"}
-               repl/rename-dir))
+               repl/rename-dir)
+     (.command js/plugin "CRenameSymbol"
+               #js {:eval "[getcwd(), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1}
+               (partial repl/extract-definition repl/rename-symbol)))
 
    (catch js/Error e
      (jdbg "main exception" e))))

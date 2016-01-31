@@ -28,8 +28,7 @@ Plugin 'snoe/nvim-refactor.js'
 - [x] [add-declaration](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-declaration.gif)
 - [ ] [add-import](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-import.gif)
 - [ ] [add-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-libspec.gif)
-- [x] [add-missing-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-missing-libspec.gif) 
--- * Combined with magic-requires
+- [x] [add-missing-libspec](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-missing-libspec.gif) * Combined with magic-requires
 - [ ] [add-project-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-project-dependency.gif)
 - [ ] [add-stubs](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-stubs.gif)
 - [x] [clean-ns](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/clean-ns.gif)
@@ -61,8 +60,8 @@ Plugin 'snoe/nvim-refactor.js'
 - [ ] [remove-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/remove-let.gif)
 - [ ] [remove-unused-requires](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/remove-unused-requires.gif)
 - [x] [rename-file-or-dir](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-file-or-dir.gif)
-- [ ] [rename-symbol-global](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-global.gif)
-- [ ] [rename-symbol-local](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-local.gif)
+- [x] [rename-symbol-global](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-global.gif) * just rename-symbol
+- [x] [rename-symbol-local](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-local.gif) * just rename-symbol
 - [ ] [replace-use](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/replace-use.gif)
 - [ ] [show-changelog](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/show-changelog.gif)
 - [ ] [sort-ns](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/sort-ns.gif)
