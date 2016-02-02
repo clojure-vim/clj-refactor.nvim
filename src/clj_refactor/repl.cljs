@@ -102,20 +102,22 @@
   (let [ns (aget info "ns")
         name (aget info "name")
         file (aget info "file")]
-    (fireplace-message
-     nvim
-     {:op "extract-definition"
-      :file (string/replace file #"^file:" "")
-      :dir project-dir
-      :ns ns
-      :name name
-      :line row
-      :column col}
-     (fn [err results]
-       (js/debug "extract-definition" err results)
-       (let [edn (aget (first results) "definition")
-             defs (reader/read-string edn)]
-         (apply transform-fn nvim ns name defs args))))))
+    (if file
+      (fireplace-message
+       nvim
+       {:op "extract-definition"
+        :file (string/replace file #"^file:" "")
+        :dir project-dir
+        :ns ns
+        :name name
+        :line row
+        :column col}
+       (fn [err results]
+         (js/debug "extract-definition" err results)
+         (let [edn (aget (first results) "definition")
+               defs (reader/read-string edn)]
+           (apply transform-fn nvim ns name defs args))))
+      (.command nvim (str "echo 'Symbol not defined in ns. (Is it a local?)'")))))
 
 (defn rename-symbol
   [nvim sym-ns sym-name defs new-symbol]
