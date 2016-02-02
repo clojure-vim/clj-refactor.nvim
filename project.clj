@@ -1,4 +1,4 @@
-(defproject clj-refactor "0.1.0"
+(defproject clj-refactor "0.1.1"
   :description ""
   :url ""
 
@@ -7,9 +7,9 @@
                  [org.clojure/core.async "0.2.374" :exclusions [org.clojure/tools.reader]]
                  [rewrite-cljs "0.3.1"]]
 
-  :npm {:dependencies [[nrepl-client "0.2.3"]
-                       [source-map-support "0.3.3"]
-                       [parinfer "1.4.0"]]}
+  :npm {:dependencies [[source-map-support "0.3.3"]
+                       [parinfer "1.4.0"]
+                       [ws "1.0.1"]]}
 
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-figwheel "0.5.0"]

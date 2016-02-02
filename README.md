@@ -23,17 +23,14 @@ Plugin 'snoe/clj-refactor.nvim'
 
 In nvim run `:PluginInstall`
 
-### Download dependencies (this step should go away soon)
-
-- `cd ~/.config/nvim/bundle/clj-refactor.nvim/`
-- `lein npm install`
-
 ### Inside nvim
 - `:UpdateRemotePlugins` you should see `remote/host: node host registered plugins ['clj-refactor.nvim']` 
 - *restart* nvim
 - refactor
 
 # Development / Testing
+
+Run `lein npm install`
 
 I generally have 4 terminals open:
 

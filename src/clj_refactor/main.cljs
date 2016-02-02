@@ -92,8 +92,6 @@
                (partial run-transform transform/unwind-thread))
 
      ;; REPL only commands
-     (.autocmd js/plugin "BufEnter" #js {:pattern "*.clj" :eval "expand('%:p:h')"}
-               repl/connect-to-repl)
      (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0}
                (partial repl/add-missing-libspec run-transform))
      (.command js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0}
