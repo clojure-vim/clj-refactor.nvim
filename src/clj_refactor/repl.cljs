@@ -70,9 +70,10 @@
    {:op "clean-ns" :path path :prefix-rewriting "false"}
    (fn [err results]
      (js/debug "clean-ns" err results)
-     (when-let [cstr (aget (first results) "ns")]
-       (run-transform
-        transform/replace-ns nvim [(parser/parse-string cstr)] fake-cursor)))))
+     (let [ns-str (aget (first results) "ns")]
+       (when (string? ns-str)
+         (run-transform
+          transform/replace-ns nvim [(parser/parse-string ns-str)] fake-cursor))))))
 
 (defn rename-file
   [nvim [new-file] current-file]
@@ -98,37 +99,39 @@
                            (aget (first results) "error") "\""))))))
 
 (defn extract-definition
-  [transform-fn nvim args [project-dir info [_ row col _]]]
-  (let [ns (aget info "ns")
-        name (aget info "name")
-        file (aget info "file")]
-    (if file
-      (fireplace-message
-       nvim
-       {:op "extract-definition"
-        :file (string/replace file #"^file:" "")
-        :dir project-dir
-        :ns ns
-        :name name
-        :line row
-        :column col}
-       (fn [err results]
-         (js/debug "extract-definition" err results)
-         (let [edn (aget (first results) "definition")
-               defs (reader/read-string edn)]
-           (apply transform-fn nvim ns name defs args))))
-      (.command nvim (str "echo 'Symbol not defined in ns. (Is it a local?)'")))))
+  [transform-fn nvim args [project-dir buffer-file buffer-ns word info [_ row col _]]]
+  (let [ns (or (aget info "ns") buffer-ns)
+        name (or (aget info "name") word)]
+    (fireplace-message
+     nvim
+     {:op "extract-definition"
+      :file buffer-file
+      :dir project-dir
+      :ns ns
+      :name name
+      :line row
+      :column col}
+     (fn [err results]
+       (js/debug "extract-definition" err results)
+       (let [edn (aget (first results) "definition")
+             defs (reader/read-string edn)]
+         (apply transform-fn nvim ns name defs args))))))
 
 (defn rename-symbol
   [nvim sym-ns sym-name defs new-symbol]
   (go
     (let [wait-ch (chan)]
-      (doseq [occurrence (conj (:occurrences defs) (:definition defs))
+      (let [{:keys [line-beg col-beg file name]} (:definition defs)]
+        (.command nvim (str "e " file " | "
+                            "call cursor(" line-beg "," col-beg ") | "
+                            "exe \"normal! w/" sym-name "\ncw" new-symbol "\" | "
+                            "w")))
+      (doseq [occurrence (conj (:occurrences defs))
               :let [{:keys [line-beg col-beg file name]} occurrence]]
         (.command nvim (str "e " file " | "
                             "call cursor(" line-beg "," col-beg ") | "
-                            "exe \"normal /" sym-name "\ncw" new-symbol "\" | "
-                            "s")
+                            "exe \"normal! cw" new-symbol "\" | "
+                            "w")
                   (fn [err]
                     (close! wait-ch)))
         (<! wait-ch)))))

@@ -49,8 +49,7 @@
                         ;; - should return nil if transformer returned nil
                         (z/root-string)
                         (parinfer/parenMode)
-                        (js->clj)
-                        (get "text"))]
+                        (aget "text"))]
       (split-lines new-sexpr))
     (catch :default e
       (jdbg "zip-it" e (.-stack e))
@@ -101,7 +100,7 @@
      (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"}
                repl/rename-dir)
      (.command js/plugin "CRenameSymbol"
-               #js {:eval "[getcwd(), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1}
+               #js {:eval "[getcwd(), expand('%:p'), fireplace#ns(), expand('<cword>'), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1}
                (partial repl/extract-definition repl/rename-symbol)))
 
    (catch js/Error e

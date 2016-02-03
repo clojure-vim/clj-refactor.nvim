@@ -4,7 +4,6 @@
    [cljs.reader :as reader]
    [clojure.zip :as zz]
    [clj-refactor.edit :as edit]
-   [parinfer :as parinfer]
    [clojure.string :as string]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]

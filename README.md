@@ -78,8 +78,8 @@ Somewhere in your environment do `export NEOVIM_JS_DEBUG=~/nvimdebug.log` and ne
 - [ ] [remove-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/remove-let.gif)
 - [ ] [remove-unused-requires](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/remove-unused-requires.gif)
 - [x] `crrf` `crrd` [rename-file-or-dir](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-file-or-dir.gif)
-- [x] `crrs` [rename-symbol-global](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-global.gif)
-- [ ] [rename-symbol-local](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-local.gif)
+- [x] `crrs` [rename-symbol-global](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-global.gif) * just rename symbol
+- [x] `crrs` [rename-symbol-local](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/rename-symbol-local.gif) * just rename symbol
 - [ ] [replace-use](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/replace-use.gif)
 - [ ] [show-changelog](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/show-changelog.gif)
 - [ ] [sort-ns](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/sort-ns.gif)
