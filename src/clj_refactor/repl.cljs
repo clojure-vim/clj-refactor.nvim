@@ -120,6 +120,7 @@
 (defn rename-symbol
   [nvim sym-ns sym-name defs new-symbol]
   (go
+    ;; TODO look at clj-refactor.el for safer impl
     (let [wait-ch (chan)]
       (let [{:keys [line-beg col-beg file name]} (:definition defs)]
         (.command nvim (str "e " file " | "
@@ -135,3 +136,18 @@
                   (fn [err]
                     (close! wait-ch)))
         (<! wait-ch)))))
+
+(defn find-used-locals
+  [run-transform transform-fn nvim args [file [_ row col _]]]
+  (fireplace-message
+   nvim
+   {:op "find-used-locals"
+    :file file
+    :line row
+    :column col}
+   (fn [err results]
+     (js/debug "find-used-locals" err results)
+     (if-let [error (aget (first results) "error")]
+       (.command nvim (str "echo \"" error "\""))
+       (let [used-locals (seq (js->clj (aget (first results) "used-locals")))]
+        (run-transform transform-fn nvim (conj (js->clj args) used-locals) [0 row col 0]))))))

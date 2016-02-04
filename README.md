@@ -54,7 +54,7 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 - [ ] [describe-refactor](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/describe-refactor.gif)
 - [ ] [destructure-keys](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/destructure-keys.gif)
 - [x] `crel` [expand-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/expand-let.gif) * Doesn't yet replace other usages of bindings
-- [ ] [extract-fn](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/extract-fn.gif)
+- [x] `cref` [extract-fn](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/extract-fn.gif)
 - [ ] [find-usages](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/find-usages.gif)
 - [ ] [hotload-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/hotload-dependency.gif)
 - [ ] [inline-symbol](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/inline-symbol.gif)

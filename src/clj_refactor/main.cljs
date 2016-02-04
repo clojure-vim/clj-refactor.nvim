@@ -98,7 +98,10 @@
                repl/rename-dir)
      (.command js/plugin "CRenameSymbol"
                #js {:eval "[getcwd(), expand('%:p'), fireplace#ns(), expand('<cword>'), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1}
-               (partial repl/extract-definition repl/rename-symbol)))
+               (partial repl/extract-definition repl/rename-symbol))
+     (.command js/plugin "CExtractFunction"
+               #js {:eval "[expand('%:p'), getpos('.')]" :nargs 1}
+               (partial repl/find-used-locals run-transform transform/extract-function)))
 
    (catch js/Error e
      (jdbg "main exception" e))))

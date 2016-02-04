@@ -97,3 +97,12 @@
 
        '(do (defn b [arg1 z]) (defn a [z] (b (x y) z)))
        (apply-zip-root '(defn a [z] (b (x y) z)) 'b t/function-from-example)))
+
+(deftest testing-extract-function
+  (are [i j] (= i j)
+       '(do (defn my-fn [c] (a (b c)))
+            (defn old-fn [] (let [c 1] (my-fn c))))
+        (apply-zip-root '(defn old-fn [] (let [c 1] (a (b c))))
+                        'a
+                        #(t/extract-function % ["my-fn" ["c"]]))))
+

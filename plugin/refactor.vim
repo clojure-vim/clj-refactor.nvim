@@ -5,6 +5,7 @@ noremap crci :CCycleIf<CR>
 noremap crcp :CCyclePrivacy<CR>
 noremap crct :CCycleThread<CR>
 noremap crel :CExpandLet<CR>
+noremap cref :CExtractFunction 
 noremap crfe :CFunctionFromExample<CR>
 noremap cril :CIntroduceLet 
 noremap crml :CMoveToLet 

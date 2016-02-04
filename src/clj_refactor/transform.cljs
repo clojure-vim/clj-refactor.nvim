@@ -266,3 +266,18 @@
       (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
       (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
 
+(defn extract-function
+  [zloc [fn-name used-locals]]
+  (let [expr-loc (z/up (edit/find-op zloc))
+        expr (z/sexpr expr-loc)
+        fn-sym (symbol fn-name)
+        used-syms (map symbol used-locals)]
+    (-> expr-loc
+      (z/replace `(~fn-sym ~@used-syms))
+      (edit/exec-to z/up #(not (edit/top? %))) ; Go to top level form
+      (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
+      (z/insert-left (n/newline-node "\n\n"))
+      (z/left)
+      (z/up))))
+
+
