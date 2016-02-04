@@ -49,8 +49,8 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 - [ ] [create-fn-from-example](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/create-fn-from-example.gif)
 - [x] `crcc` [cycle-coll](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-coll.gif)
 - [x] `crci` [cycle-if](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-if.gif)
-- [ ] [cycle-privacy](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-privacy.gif)
-- [ ] [cycle-thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-thread.gif)
+- [x] `crcp` [cycle-privacy](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-privacy.gif)
+- [x] `crct` [cycle-thread](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-thread.gif)
 - [ ] [describe-refactor](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/describe-refactor.gif)
 - [ ] [destructure-keys](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/destructure-keys.gif)
 - [x] `crel` [expand-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/expand-let.gif) * Doesn't yet replace other usages of bindings

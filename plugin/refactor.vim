@@ -1,16 +1,18 @@
 noremap crad :CAddDeclaration 
-noremap cril :CIntroduceLet 
-noremap crel :CExpandLet<CR>
-noremap crml :CMoveToLet 
+noremap cram :CAddMissingLibSpec<CR>
 noremap crcc :CCycleColl<CR>
 noremap crci :CCycleIf<CR>
-noremap cram :CAddMissingLibSpec<CR>
-noremap crth :CThread<CR>
-noremap crtt :CThreadLast<CR>
+noremap crcp :CCyclePrivacy<CR>
+noremap crct :CCycleThread<CR>
+noremap crel :CExpandLet<CR>
+noremap cril :CIntroduceLet 
+noremap crml :CMoveToLet 
 noremap crtf :CThreadFirstAll<CR>
+noremap crth :CThread<CR>
 noremap crtl :CThreadLastAll<CR>
-noremap cruw :CUnwindThread<CR>
+noremap crtt :CThreadLast<CR>
 noremap crua :CUnwindAll<CR>
+noremap cruw :CUnwindThread<CR>
 
 noremap crcn :CCleanNS<CR>
 noremap crrf :CRenameFile 

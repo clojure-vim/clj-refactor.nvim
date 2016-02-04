@@ -233,3 +233,20 @@
       (z/insert-right new-ns)
       (z/remove)))
 
+(defn cycle-op
+  [zloc a-op b-op]
+  (if-let [oploc (edit/find-ops-up zloc a-op b-op)]
+    (let [thread-type (z/sexpr oploc)]
+      (cond
+       (= a-op thread-type) (z/replace oploc b-op)
+       (= b-op thread-type) (z/replace oploc a-op)
+       :else zloc))
+    zloc))
+
+(defn cycle-thread
+  [zloc _]
+  (cycle-op zloc '-> '->>))
+
+(defn cycle-privacy
+  [zloc _]
+  (cycle-op zloc 'defn 'defn-))

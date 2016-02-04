@@ -78,3 +78,14 @@
        '(e (d (c (b a)) d')) (apply-zip '(-> a b c (d d') e) 'e t/unwind-all)
        '(e (d d' (c (b a)))) (apply-zip '(->> a b c (d d') e) 'e t/unwind-all)))
 
+(deftest testing-cycle-thread
+  (are [i j] (= i j)
+       '(->> a (b c)) (apply-zip '(-> a (b c)) 'b t/cycle-thread)
+       '(-> a (b c)) (apply-zip '(->> a (b c)) 'b t/cycle-thread)
+       '(a (b c)) (apply-zip '(a (b c)) 'b t/cycle-thread)))
+
+(deftest testing-cycle-privacy
+  (are [i j] (= i j)
+       '(defn a [b] (b c)) (apply-zip '(defn- a [b] (b c)) 'c t/cycle-privacy)
+       '(defn- a [b] (b c)) (apply-zip '(defn a [b] (b c)) 'c t/cycle-privacy)
+       '(a (b c)) (apply-zip '(a (b c)) 'b t/cycle-privacy)))

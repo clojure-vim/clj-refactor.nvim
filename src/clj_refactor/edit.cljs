@@ -10,8 +10,8 @@
 (defn top? [loc]
   (= nf/FormsNode (type (z/node loc))))
 
-(defn zdbg [loc]
-  (doto (z/sexpr loc) prn)
+(defn zdbg [loc msg]
+  (doto (z/sexpr loc) (prn msg))
   loc)
 
 (defn exec-to [loc f p?]
@@ -28,6 +28,15 @@
   (if (z/seq? zloc)
     (z/down zloc)
     (z/leftmost zloc)))
+
+(defn find-ops-up
+  [zloc & op-syms]
+  (let [oploc (find-op zloc)]
+    (if (contains? (set op-syms) (z/sexpr oploc))
+      oploc
+      (let [next-op (z/leftmost (z/up oploc))]
+        (when-not (= next-op zloc)
+          (apply find-ops-up next-op op-syms))))))
 
 (defn single-child?
   [zloc]

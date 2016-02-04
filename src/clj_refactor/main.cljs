@@ -71,30 +71,20 @@
   (try
    (when (exists? js/plugin)
      (jdbg "hello refactor")
-     (.command js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1}
-               (partial run-transform transform/introduce-let))
-     (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs "*"}
-               (partial run-transform transform/expand-let))
-     (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1}
-               (partial run-transform transform/move-to-let))
-     (.command js/plugin "CAddDeclaration" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/add-declaration))
-     (.command js/plugin "CCycleColl" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/cycle-coll))
-     (.command js/plugin "CCycleIf" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/cycle-if))
-     (.command js/plugin "CThread" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/thread))
-     (.command js/plugin "CThreadLast" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/thread-last))
-     (.command js/plugin "CThreadFirstAll" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/thread-first-all))
-     (.command js/plugin "CThreadLastAll" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/thread-last-all))
-     (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/unwind-thread))
-     (.command js/plugin "CUnwindAll" #js {:eval "getpos('.')" :nargs 0}
-               (partial run-transform transform/unwind-all))
+     (.command js/plugin "CAddDeclaration" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/add-declaration))
+     (.command js/plugin "CCycleColl" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-coll))
+     (.command js/plugin "CCycleIf" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-if))
+     (.command js/plugin "CCyclePrivacy" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-privacy))
+     (.command js/plugin "CCycleThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-thread))
+     (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/expand-let))
+     (.command js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/introduce-let))
+     (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/move-to-let))
+     (.command js/plugin "CThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread))
+     (.command js/plugin "CThreadFirstAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-first-all))
+     (.command js/plugin "CThreadLast" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-last))
+     (.command js/plugin "CThreadLastAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-last-all))
+     (.command js/plugin "CUnwindAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-all))
+     (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-thread))
 
      ;; REPL only commands
      (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0}
