@@ -46,17 +46,35 @@
 
 (deftest testing-cycle-coll
   (are [i j] (= i j)
-    '{a b} (apply-zip '(a b) '(a b) t/cycle-coll)
-    '[a b] (apply-zip '{a b} '{a b} t/cycle-coll)
-    '#{a b} (apply-zip '[a b] '[a b] t/cycle-coll)
-    '(a b) (apply-zip '#{a b} '#{a b} t/cycle-coll)))
+       '{a b} (apply-zip '(a b) '(a b) t/cycle-coll)
+       '[a b] (apply-zip '{a b} '{a b} t/cycle-coll)
+       '#{a b} (apply-zip '[a b] '[a b] t/cycle-coll)
+       '(a b) (apply-zip '#{a b} '#{a b} t/cycle-coll)))
 
+(deftest thread
+  (are [i j] (= i j)
+       '(-> a b) (apply-zip '(b a) 'b t/thread)
+       '(-> a b c) (apply-zip '(-> (b a) c) 'b t/thread)
+       '(->> a (b c)) (apply-zip '(b c a) 'b t/thread-last)))
+
+(deftest testing-thread-all
+  (are [i j] (= i j)
+       '(-> a b c d e) (apply-zip '(e (d (c (b a)))) 'e t/thread-first-all)
+       '(-> a b c (d d') e) (apply-zip '(e (d (c (b a)) d')) 'e t/thread-first-all)
+       '(->> a b c (d d') e) (apply-zip '(e (d d' (c (b a)))) 'e t/thread-last-all)))
 
 (deftest testing-unwind-thread
   (are [i j] (= i j)
-    '(a b) (apply-zip '(-> b (a)) '-> t/unwind-thread)
-    '(a b) (apply-zip '(->> b (a)) '->> t/unwind-thread)
-    '(a b c) (apply-zip '(-> b (a c)) '-> t/unwind-thread)
-    '(a b c) (apply-zip '(->> c (a b)) '->> t/unwind-thread)
-    '(-> (a b c) (d e)) (apply-zip '(-> b (a c) (d e)) '-> t/unwind-thread)
-    '(->> (a b c) (d e)) (apply-zip '(->> c (a b) (d e)) '->> t/unwind-thread)))
+       '(a b) (apply-zip '(-> b (a)) '-> t/unwind-thread)
+       '(a b) (apply-zip '(->> b (a)) '->> t/unwind-thread)
+       '(a b c) (apply-zip '(-> b (a c)) '-> t/unwind-thread)
+       '(a b c) (apply-zip '(->> c (a b)) '->> t/unwind-thread)
+       '(-> (a b c) (d e)) (apply-zip '(-> b (a c) (d e)) '-> t/unwind-thread)
+       '(->> (a b c) (d e)) (apply-zip '(->> c (a b) (d e)) '->> t/unwind-thread)))
+
+(deftest testing-unwind-all
+  (are [i j] (= i j)
+       '(e (d (c (b a)))) (apply-zip '(-> a b c d e) 'e t/unwind-all)
+       '(e (d (c (b a)) d')) (apply-zip '(-> a b c (d d') e) 'e t/unwind-all)
+       '(e (d d' (c (b a)))) (apply-zip '(->> a b c (d d') e) 'e t/unwind-all)))
+

@@ -123,19 +123,20 @@
 
 (defn thread-sym
   [zloc sym]
-  (if-let [first-loc (-> zloc (edit/find-op) (z/right))]
-    (let [first-node (z/node first-loc)
-          parent-op (z/sexpr (z/leftmost (z/up first-loc)))
-          threaded? (= sym parent-op)]
-        (js/debug (pr-str parent-op))
-        (-> first-loc
-            (z/remove)
-            (z/up)
-            ((fn [loc] (if threaded?
-                         loc
-                         (-> loc (p/wrap-around :list) (z/insert-left sym)))))
-            (z/insert-left first-node)))
-    zloc))
+  (let [movement (if (= '-> sym) z/right z/rightmost)]
+    (if-let [first-loc (-> zloc (edit/find-op) movement)]
+      (let [first-node (z/node first-loc)
+            parent-op (z/sexpr (z/leftmost (z/up first-loc)))
+            threaded? (= sym parent-op)]
+          (-> first-loc
+              (z/remove)
+              (z/up)
+              ((fn [loc] (cond-> loc
+                          (edit/single-child? loc) (-> z/down p/raise)
+                          (not threaded?) (-> (p/wrap-around :list) (z/insert-left sym)))))
+              (z/insert-left first-node)
+              (z/leftmost)))
+      zloc)))
 
 (defn thread
   [zloc _]
@@ -144,6 +145,21 @@
 (defn thread-last
   [zloc _]
   (thread-sym zloc '->>))
+
+(defn thread-all
+  [zloc sym]
+  (loop [loc (thread-sym zloc sym)]
+    (if (z/seq? (z/right loc))
+      (recur (thread-sym (z/right loc) sym))
+      loc)))
+
+(defn thread-first-all
+  [zloc _]
+  (thread-all zloc '->))
+
+(defn thread-last-all
+  [zloc _]
+  (thread-all zloc '->>))
 
 (defn ensure-list
   [zloc]
@@ -171,9 +187,18 @@
             ((fn [loc]
                (if (z/rightmost? loc)
                  (p/raise loc)
-                 loc)))))
+                 loc)))
+            (z/up)))
       zloc)))
 
+(defn unwind-all
+  [zloc _]
+  (loop [loc (unwind-thread zloc nil)]
+    (let [oploc (edit/find-op loc)
+          thread-type (z/sexpr oploc)]
+      (if (contains? #{'-> '->>} thread-type)
+        (recur (unwind-thread loc nil))
+        loc))))
 
 ;; TODO will insert duplicates
 ;; TODO handle :type and :macro

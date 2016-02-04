@@ -87,8 +87,14 @@
                (partial run-transform transform/thread))
      (.command js/plugin "CThreadLast" #js {:eval "getpos('.')" :nargs 0}
                (partial run-transform transform/thread-last))
+     (.command js/plugin "CThreadFirstAll" #js {:eval "getpos('.')" :nargs 0}
+               (partial run-transform transform/thread-first-all))
+     (.command js/plugin "CThreadLastAll" #js {:eval "getpos('.')" :nargs 0}
+               (partial run-transform transform/thread-last-all))
      (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0}
                (partial run-transform transform/unwind-thread))
+     (.command js/plugin "CUnwindAll" #js {:eval "getpos('.')" :nargs 0}
+               (partial run-transform transform/unwind-all))
 
      ;; REPL only commands
      (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0}

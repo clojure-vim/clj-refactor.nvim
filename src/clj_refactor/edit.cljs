@@ -29,6 +29,12 @@
     (z/down zloc)
     (z/leftmost zloc)))
 
+(defn single-child?
+  [zloc]
+  (let [child (z/down zloc)]
+    (and (z/leftmost? child)
+         (z/rightmost? child))))
+
 ;; TODO Is this safe?
 (defn join-let
   "if a let is directly above a form, will join binding forms and remove the inner let"
