@@ -2,7 +2,7 @@ A neovim port of [clj-refactor.el](https://github.com/clojure-emacs/clj-refactor
 
 # Usage 
 
-All commands are mapped under the `cr` prefix and use a two letter mnemonic shortcut. E.g. `crrs` for `:CRRenameSymbol`. The full list is below.
+All commands are mapped under the `cr` prefix and use a two letter mnemonic shortcut. E.g. `crrs` for `Clojure Refactor Rename Symbol`.The full list is below.
 
 # Installation
 
@@ -46,7 +46,7 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 - [ ] [add-project-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-project-dependency.gif)
 - [ ] [add-stubs](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/add-stubs.gif)
 - [x] `crcn` [clean-ns](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/clean-ns.gif)
-- [ ] [create-fn-from-example](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/create-fn-from-example.gif)
+- [x] `crfe` [create-fn-from-example](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/create-fn-from-example.gif)
 - [x] `crcc` [cycle-coll](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-coll.gif)
 - [x] `crci` [cycle-if](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-if.gif)
 - [x] `crcp` [cycle-privacy](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/cycle-privacy.gif)

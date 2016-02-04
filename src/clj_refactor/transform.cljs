@@ -250,3 +250,19 @@
 (defn cycle-privacy
   [zloc _]
   (cycle-op zloc 'defn 'defn-))
+
+(defn function-from-example
+  [zloc _]
+  (let [op-loc (edit/find-op zloc)
+        example-loc (z/up (edit/find-op zloc))
+        child-sexprs (n/child-sexprs (z/node example-loc))
+        fn-name (first child-sexprs)
+        args (for [[i arg] (map-indexed vector (rest child-sexprs))]
+               (if (symbol? arg)
+                 arg
+                 (symbol (str "arg" (inc i)))))]
+    (-> example-loc
+      (edit/exec-to z/up #(not (edit/top? %))) ; Go to top level form
+      (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
+      (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
+

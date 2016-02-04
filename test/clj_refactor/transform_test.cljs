@@ -4,7 +4,7 @@
               [clojure.string :as str]
               [clj-refactor.main :as m]
               [clj-refactor.transform :as t]
-              [clj-refactor.test-helper :refer [apply-zip apply-zip-to]]))
+              [clj-refactor.test-helper :refer [apply-zip apply-zip-to apply-zip-root]]))
 
 (deftest testing-introduce-let
   (are [i j] (= i j)
@@ -89,3 +89,11 @@
        '(defn a [b] (b c)) (apply-zip '(defn- a [b] (b c)) 'c t/cycle-privacy)
        '(defn- a [b] (b c)) (apply-zip '(defn a [b] (b c)) 'c t/cycle-privacy)
        '(a (b c)) (apply-zip '(a (b c)) 'b t/cycle-privacy)))
+
+(deftest testing-function-from-example
+  (are [i j] (= i j)
+       '(do (defn b [z]) (defn a [z] (b z)))
+       (apply-zip-root '(defn a [z] (b z)) 'b t/function-from-example)
+
+       '(do (defn b [arg1 z]) (defn a [z] (b (x y) z)))
+       (apply-zip-root '(defn a [z] (b (x y) z)) 'b t/function-from-example)))
