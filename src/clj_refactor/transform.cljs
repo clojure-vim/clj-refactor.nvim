@@ -88,7 +88,7 @@
   (let [node (z/sexpr zloc)]
     (if (symbol? node)
       (-> zloc
-          (edit/exec-to z/up #(not (edit/top? %))) ; Go to top level form
+          (edit/to-root)
           (z/insert-left (list 'declare node)) ; add declare
           (z/insert-left (n/newline-node "\n\n"))) ; add new line after location
       zloc)))
@@ -262,7 +262,7 @@
                  arg
                  (symbol (str "arg" (inc i)))))]
     (-> example-loc
-      (edit/exec-to z/up #(not (edit/top? %))) ; Go to top level form
+      (edit/to-root)
       (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
       (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
 
@@ -274,7 +274,7 @@
         used-syms (map symbol used-locals)]
     (-> expr-loc
       (z/replace `(~fn-sym ~@used-syms))
-      (edit/exec-to z/up #(not (edit/top? %))) ; Go to top level form
+      (edit/to-root)
       (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
       (z/insert-left (n/newline-node "\n\n"))
       (z/left)

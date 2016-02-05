@@ -35,22 +35,35 @@
 
 (declare run-transform)
 
+(defn swap-position!
+  [zloc cursor-ref]
+  (swap! cursor-ref edit/read-position zloc)
+  zloc)
+
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
   [transformer lines row col args]
   (try
-    (let [sexpr (string/join "\n" lines)
+    (let [new-cursor (atom [row col])
+          sexpr (string/join "\n" lines)
           pos {:row row :col col :end-row row :end-col col}
           new-sexpr (-> sexpr
                         (z/of-string)
                         (z/find-last-by-pos pos #(not= (z/tag %) :whitespace))
+                        (edit/mark-position :new-cursor)
                         (transformer args)
+                        (edit/find-mark :new-cursor)
+                        (swap-position! new-cursor)
+                        (edit/zdbg (pr-str @new-cursor))
                         ;; TODO should check if anything has changed
                         ;; - should return nil if transformer returned nil
                         (z/root-string)
                         (parinfer/parenMode)
                         (aget "text"))]
-      (split-lines new-sexpr))
+      (let [[row col] @new-cursor]
+        {:row row
+         :col col
+         :new-lines (split-lines new-sexpr)}))
     (catch :default e
       (jdbg "zip-it" e (.-stack e))
       (throw e))))
@@ -62,8 +75,14 @@
                       (fn [err buf]
                         (.getLineSlice buf 0 -1 true true
                                        (fn [err lines]
-                                         (when-let [new-lines (clj->js (zip-it transformer (js->clj lines) row col (concat args static-args)))]
-                                           (.setLineSlice buf 0 -1 true true new-lines))))))
+                                         (when-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) row col (concat args static-args))]
+                                           (jdbg "saving" row col)
+                                           (try
+                                             (.setLineSlice buf 0 -1 true true (clj->js new-lines)
+                                                            (fn [err]
+                                                             (.command nvim (str "call cursor("row "," col")"))))
+                                            (catch :default e
+                                              (jdbg "save" e (.-stack e)))))))))
    (catch :default e
      (jdbg "run-transform" e))))
 

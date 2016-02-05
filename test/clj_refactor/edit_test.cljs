@@ -2,11 +2,12 @@
   (:require
    [rewrite-clj.paredit :as p]
    [rewrite-clj.zip :as z]
+   [rewrite-clj.zip.whitespace :as zw]
    [cljs.nodejs :as nodejs]
    [cljs.test :refer-macros [deftest is testing run-tests are]]
    [clojure.string :as str]
    [clj-refactor.edit :as e]
-   [clj-refactor.test-helper :refer [apply-zip apply-zip-to]]))
+   [clj-refactor.test-helper :refer [str-zip-to zip-to apply-zip apply-zip-to]]))
 
 (deftest test-remove-right
   (are [i j] (= i j)
@@ -61,3 +62,21 @@
     '(x [a c b] y z) (apply-zip '(x [a b c] y z) 'b e/transpose-with-right)
 
     '(x y [a b c] z) (apply-zip '(x [a b c] y z) '[a b c] e/transpose-with-right)))
+
+(deftest test-marking
+  (let [zloc (str-zip-to "(a (b c))\n(x (y z))" 'z identity)]
+    (is (= 'z
+          (-> zloc
+              (e/mark-position ::marked)
+              (z/up)
+              (z/up)
+              (z/insert-left '(x y))
+              (z/left)
+              (e/find-mark ::marked)
+              (z/sexpr))))))
+
+(deftest test-read-position
+  (is (= [1 5]
+         (str-zip-to "(a (b c))\n(x (y z))" 'b (partial e/read-position [55 44]))))
+  (is (= [2 2]
+         (str-zip-to "(a (b c))\n(x (y z))" 'x (partial e/read-position [55 44])))))

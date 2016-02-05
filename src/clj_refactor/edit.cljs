@@ -1,7 +1,10 @@
 (ns clj-refactor.edit
  (:require
+   [clojure.string :as string]
+   [clojure.zip :as cz]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]
+   [rewrite-clj.node.protocols :as np]
    [rewrite-clj.paredit :as p]
    [rewrite-clj.zip :as z]
    [rewrite-clj.zip.utils :as zu]
@@ -19,6 +22,9 @@
        (iterate f)
        (take-while p?)
        last))
+
+(defn to-root [loc]
+  (exec-to loc z/up #(not (top? %))))
 
 (defn parent-let? [zloc]
   (= 'let (-> zloc z/up z/leftmost z/sexpr)))
@@ -112,3 +118,33 @@
         z/rightmost
         z/down
         z/down)))
+
+(defn remove-all-after
+  [zloc]
+  (loop [zloc (zu/remove-right-while zloc (constantly true))]
+    (if-let [uploc (z/up zloc)]
+      (recur (zu/remove-right-while uploc (constantly true)))
+      zloc)))
+
+(defn read-position
+  [old-pos zloc]
+  (-> zloc
+      (zdbg "read-position")
+      (remove-all-after)
+      (z/root-string)
+      (z/of-string)
+      (z/rightmost)
+      (z/find-next-depth-first (comp z/end? z/next))
+      (z/node)
+      (meta)
+      ((juxt :row :col))))
+
+(defn mark-position
+  [zloc marker]
+  (z/replace zloc (assoc (z/node zloc) ::marker marker)))
+
+(defn find-mark
+  [zloc marker]
+  (if-let [mloc (z/find (to-root zloc) z/next #(= marker (get (z/node %) ::marker)))]
+    mloc
+    zloc))
