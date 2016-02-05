@@ -64,7 +64,7 @@
 (defn clean-ns
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
-  [run-transform nvim _ path]
+  [run-transform nvim _ [cursor path]]
   (fireplace-message
    nvim
    {:op "clean-ns" :path path :prefix-rewriting "false"}
@@ -73,7 +73,7 @@
      (let [ns-str (aget (first results) "ns")]
        (when (string? ns-str)
          (run-transform
-          transform/replace-ns nvim [(parser/parse-string ns-str)] fake-cursor))))))
+          transform/replace-ns nvim [(parser/parse-string ns-str)] cursor))))))
 
 (defn rename-file
   [nvim [new-file] current-file]

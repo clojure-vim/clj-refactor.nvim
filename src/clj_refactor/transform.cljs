@@ -16,11 +16,6 @@
    [rewrite-clj.zip.utils :as zu]
    [rewrite-clj.zip.whitespace :as ws]))
 
-(defn zdbg
-  [zloc]
-  (println (z/sexpr zloc))
-  zloc)
-
 (defn introduce-let
   "Adds a let around the current form."
   [zloc [binding-name]]

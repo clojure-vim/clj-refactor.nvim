@@ -51,12 +51,11 @@
                         (z/of-string)
                         (z/find-last-by-pos pos #(not= (z/tag %) :whitespace))
                         (edit/mark-position :new-cursor)
+                        ;; TODO should check if anything has changed
+                        ;; - should return nil if transformer returned nil
                         (transformer args)
                         (edit/find-mark :new-cursor)
                         (swap-position! new-cursor)
-                        (edit/zdbg (pr-str @new-cursor))
-                        ;; TODO should check if anything has changed
-                        ;; - should return nil if transformer returned nil
                         (z/root-string)
                         (parinfer/parenMode)
                         (aget "text"))]
@@ -109,7 +108,7 @@
      ;; REPL only commands
      (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0}
                (partial repl/add-missing-libspec run-transform))
-     (.command js/plugin "CCleanNS" #js {:eval "expand('%:p')" :nargs 0}
+     (.command js/plugin "CCleanNS" #js {:eval "[getpos('.'), expand('%:p')]" :nargs 0}
                (partial repl/clean-ns run-transform))
      (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"}
                repl/rename-file)

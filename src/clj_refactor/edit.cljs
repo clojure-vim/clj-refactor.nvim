@@ -24,7 +24,9 @@
        last))
 
 (defn to-root [loc]
-  (exec-to loc z/up #(not (top? %))))
+  (if (top? loc)
+    loc
+    (exec-to loc z/up #(not (top? %)))))
 
 (defn parent-let? [zloc]
   (= 'let (-> zloc z/up z/leftmost z/sexpr)))
@@ -129,7 +131,6 @@
 (defn read-position
   [old-pos zloc]
   (-> zloc
-      (zdbg "read-position")
       (remove-all-after)
       (z/root-string)
       (z/of-string)
@@ -145,6 +146,6 @@
 
 (defn find-mark
   [zloc marker]
-  (if-let [mloc (z/find (to-root zloc) z/next #(= marker (get (z/node %) ::marker)))]
+  (if-let [mloc (z/find (to-root zloc) z/next (fn [loc] (= marker (get (z/node loc) ::marker))))]
     mloc
     zloc))
