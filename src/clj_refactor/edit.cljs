@@ -129,7 +129,7 @@
       zloc)))
 
 (defn read-position
-  [old-pos zloc]
+  [old-pos zloc offset]
   (-> zloc
       (remove-all-after)
       (z/root-string)
@@ -138,7 +138,7 @@
       (z/find-next-depth-first (comp z/end? z/next))
       (z/node)
       (meta)
-      ((juxt :row :col))))
+      ((juxt :row (comp (partial + offset) :col)))))
 
 (defn mark-position
   [zloc marker]

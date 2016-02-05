@@ -8,7 +8,6 @@
   (:require-macros
    [cljs.core.async.macros :refer [go]]))
 
-(def fake-cursor [1 1 1 1])
 
 (defn fireplace-message
   [nvim args cb]
@@ -16,7 +15,7 @@
 
 (defn nrepl-resolve-missing
   "Try to add a ns libspec based on whatever the middleware thinks."
-  [run-transform nvim sym]
+  [run-transform nvim sym cursor]
   (fireplace-message
    nvim
    {:op "resolve-missing" :symbol (str sym) :debug "true"}
@@ -29,7 +28,7 @@
               (js/debug "More than one candidate!" candidates))
             ;; take first one for now - maybe can get input() choice
             (when-let [{:keys [name type]} (first candidates)]
-              (run-transform transform/add-candidate nvim [name type (namespace sym)] fake-cursor))))
+              (run-transform transform/add-candidate nvim [name type (namespace sym)] cursor))))
         (.command nvim "echo 'No candidates'"))
       (catch :default e
         (js/debug "add-missing response exception" e e.stack))))))
@@ -37,7 +36,7 @@
 (defn nrepl-namespace-aliases
   "Try to add a ns libspec based on already used aliases.
   Falls back to `resolve-missing`."
-  [run-transform nvim sym]
+  [run-transform nvim sym cursor]
   (fireplace-message
    nvim
    {:op "namespace-aliases" :debug "true"}
@@ -47,19 +46,19 @@
             aliases (reader/read-string cstr)
             sym-ns (namespace sym)]
         (if-let [missing (first (get-in aliases [:clj (symbol sym-ns)]))]
-          (run-transform transform/add-candidate nvim [missing :ns sym-ns] fake-cursor)
-          (nrepl-resolve-missing run-transform nvim sym)))
+          (run-transform transform/add-candidate nvim [missing :ns sym-ns] cursor)
+          (nrepl-resolve-missing run-transform nvim sym cursor)))
       (catch :default e
         (js/debug "add-missing namespace-aliases" e e.stack))))))
 
 (defn add-missing-libspec
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
-  [run-transform nvim _ word]
+  [run-transform nvim _ [cursor word]]
   (let [sym (symbol word)]
       (if (namespace sym)
-        (nrepl-namespace-aliases run-transform nvim sym)
-        (nrepl-resolve-missing run-transform nvim sym))))
+        (nrepl-namespace-aliases run-transform nvim sym cursor)
+        (nrepl-resolve-missing run-transform nvim sym cursor))))
 
 (defn clean-ns
   "Asks repl for the missing libspec.

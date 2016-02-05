@@ -77,6 +77,9 @@
 
 (deftest test-read-position
   (is (= [1 5]
-         (str-zip-to "(a (b c))\n(x (y z))" 'b (partial e/read-position [55 44]))))
+         (str-zip-to "(a (b c))\n(x (y z))" 'b #(e/read-position [55 44] % 0))))
   (is (= [2 2]
-         (str-zip-to "(a (b c))\n(x (y z))" 'x (partial e/read-position [55 44])))))
+         (str-zip-to "(a (b c))\n(x (y z))" 'x #(e/read-position [55 44] % 0))))
+  (is (= [2 4]
+         (str-zip-to "(a (b c))\n(xero (y z))" 'xero #(e/read-position [55 44] % 2)))))
+

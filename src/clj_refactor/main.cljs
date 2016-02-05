@@ -36,36 +36,39 @@
 (declare run-transform)
 
 (defn swap-position!
-  [zloc cursor-ref]
-  (swap! cursor-ref edit/read-position zloc)
+  [zloc cursor-ref offset]
+  (swap! cursor-ref edit/read-position zloc offset)
   zloc)
 
 (defn zip-it
   "Finds the loc at row col of the file and runs the transformer-fn."
   [transformer lines row col args]
   (try
-    (let [new-cursor (atom [row col])
-          sexpr (string/join "\n" lines)
-          pos {:row row :col col :end-row row :end-col col}
-          new-sexpr (-> sexpr
-                        (z/of-string)
-                        (z/find-last-by-pos pos #(not= (z/tag %) :whitespace))
-                        (edit/mark-position :new-cursor)
-                        ;; TODO should check if anything has changed
-                        ;; - should return nil if transformer returned nil
-                        (transformer args)
-                        (edit/find-mark :new-cursor)
-                        (swap-position! new-cursor)
-                        (z/root-string)
-                        (parinfer/parenMode)
-                        (aget "text"))]
-      (let [[row col] @new-cursor]
-        {:row row
-         :col col
-         :new-lines (split-lines new-sexpr)}))
-    (catch :default e
-      (jdbg "zip-it" e (.-stack e))
-      (throw e))))
+   (let [new-cursor (atom [row col])
+         sexpr (string/join "\n" lines)
+         pos {:row row :col col :end-row row :end-col col}
+         zloc (-> sexpr
+                  (z/of-string)
+                  (z/find-last-by-pos pos #(not= (z/tag %) :whitespace)))
+         zpos (meta (z/node zloc))
+         offset (- col (:col zpos))
+         new-sexpr (-> zloc
+                       (edit/mark-position :new-cursor)
+                       ;; TODO should check if anything has changed
+                       ;; - should return nil if transformer returned nil
+                       (transformer args)
+                       (edit/find-mark :new-cursor)
+                       (swap-position! new-cursor offset)
+                       (z/root-string)
+                       (parinfer/parenMode)
+                       (aget "text"))]
+     (let [[row col] @new-cursor]
+       {:row row
+        :col col
+        :new-lines (split-lines new-sexpr)}))
+   (catch :default e
+     (jdbg "zip-it" e (.-stack e))
+     (throw e))))
 
 (defn run-transform [transformer nvim args [_ row col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
@@ -106,14 +109,10 @@
      (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-thread))
 
      ;; REPL only commands
-     (.command js/plugin "CAddMissingLibSpec" #js {:eval "expand('<cword>')" :nargs 0}
-               (partial repl/add-missing-libspec run-transform))
-     (.command js/plugin "CCleanNS" #js {:eval "[getpos('.'), expand('%:p')]" :nargs 0}
-               (partial repl/clean-ns run-transform))
-     (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"}
-               repl/rename-file)
-     (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"}
-               repl/rename-dir)
+     (.command js/plugin "CAddMissingLibSpec" #js {:eval "[getpos('.'), expand('<cword>')]" :nargs 0} (partial repl/add-missing-libspec run-transform))
+     (.command js/plugin "CCleanNS" #js {:eval "[getpos('.'), expand('%:p')]" :nargs 0} (partial repl/clean-ns run-transform))
+     (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"} repl/rename-file)
+     (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"} repl/rename-dir)
      (.command js/plugin "CRenameSymbol"
                #js {:eval "[getcwd(), expand('%:p'), fireplace#ns(), expand('<cword>'), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1}
                (partial repl/extract-definition repl/rename-symbol))
