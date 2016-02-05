@@ -1,4 +1,4 @@
-noremap crad :CAddDeclaration 
+noremap crad :CAddDeclaration<CR>
 noremap cram :CAddMissingLibSpec<CR>
 noremap crcc :CCycleColl<CR>
 noremap crci :CCycleIf<CR>
@@ -17,6 +17,6 @@ noremap crua :CUnwindAll<CR>
 noremap cruw :CUnwindThread<CR>
 
 noremap crcn :CCleanNS<CR>
-noremap crrf :CRenameFile 
 noremap crrd :CRenameDir 
+noremap crrf :CRenameFile 
 noremap crrs :CRenameSymbol 

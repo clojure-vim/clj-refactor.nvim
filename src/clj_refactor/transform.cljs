@@ -269,10 +269,10 @@
         used-syms (map symbol used-locals)]
     (-> expr-loc
       (z/replace `(~fn-sym ~@used-syms))
+      (edit/mark-position :new-cursor)
       (edit/to-root)
       (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
       (z/insert-left (n/newline-node "\n\n"))
       (z/left)
       (z/up))))
-
 

@@ -11,7 +11,10 @@
 
 (defn fireplace-message
   [nvim args cb]
-  (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]) cb))
+  ;; Most refactor commands work on saved files
+  (.command nvim "w"
+            (fn [err]
+              (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]) cb))))
 
 (defn nrepl-resolve-missing
   "Try to add a ns libspec based on whatever the middleware thinks."
