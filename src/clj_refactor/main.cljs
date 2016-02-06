@@ -16,7 +16,10 @@
    [rewrite-clj.zip.findz :as zf]
    [rewrite-clj.zip.removez :as zr]
    [rewrite-clj.zip.utils :as zu]
-   [rewrite-clj.zip.whitespace :as ws]))
+   [rewrite-clj.zip.whitespace :as ws]
+   [cljs.core.async :refer [close! chan <!]])
+  (:require-macros
+   [cljs.core.async.macros :refer [go]]))
 
 (nodejs/enable-util-print!)
 
@@ -32,8 +35,6 @@
 
 (defn split-lines [s]
   (string/split s #"\r?\n" -1))
-
-(declare run-transform)
 
 (defn swap-position!
   [zloc cursor-ref offset]
@@ -70,23 +71,49 @@
      (jdbg "zip-it" e (.-stack e))
      (throw e))))
 
-(defn run-transform [transformer nvim args [_ row col _] & static-args]
+(defn run-transform* [done-ch transformer nvim args [_ row col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
+  (js/debug "transforming" (pr-str done-ch))
   (try
    (.getCurrentBuffer nvim
                       (fn [err buf]
                         (.getLineSlice buf 0 -1 true true
                                        (fn [err lines]
-                                         (when-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) row col (concat args static-args))]
-                                           (jdbg "saving" row col)
+                                         (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) row col (concat args static-args))]
                                            (try
-                                             (.setLineSlice buf 0 -1 true true (clj->js new-lines)
-                                                            (fn [err]
-                                                             (.command nvim (str "call cursor("row "," col")"))))
+                                            (jdbg "saving" row col)
+                                            (.setLineSlice buf 0 -1 true true (clj->js new-lines)
+                                                           (fn [err]
+                                                             (.command nvim (str "call cursor("row "," col")")
+                                                                       (fn [err]
+                                                                         (js/debug "closing")
+                                                                         (close! done-ch)))))
                                             (catch :default e
-                                              (jdbg "save" e (.-stack e)))))))))
+                                              (jdbg "save" e (.-stack e))))
+                                           (do
+                                            (js/debug "closing")
+                                            (close! done-ch)))))))
    (catch :default e
      (jdbg "run-transform" e))))
+
+(defn run-transform
+  [transformer nvim args cursor & static-args]
+  (let [done-ch (chan)]
+    (go
+      (apply run-transform* done-ch transformer nvim args cursor static-args)
+      (<! done-ch))))
+
+(defn run-repl
+  [fn-thing nvim args static-args callback]
+  (js/debug args static-args)
+  (go
+    (let [done-ch (chan)]
+      (fn-thing done-ch run-transform* nvim args static-args)
+      (js/debug "run-repl waiting on done")
+      (<! done-ch)
+      (js/debug "run-repl done")
+      (when callback
+        (callback 0)))))
 
 (defn -main []
   (try
@@ -109,8 +136,8 @@
      (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-thread))
 
      ;; REPL only commands
-     (.command js/plugin "CAddMissingLibSpec" #js {:eval "[getpos('.'), expand('<cword>')]" :nargs 0} (partial repl/add-missing-libspec run-transform))
-     (.command js/plugin "CCleanNS" #js {:eval "[getpos('.'), expand('%:p')]" :nargs 0} (partial repl/clean-ns run-transform))
+     (.command js/plugin "CAddMissingLibSpec" #js {:eval "[getpos('.'), expand('<cword>')]" :nargs 0} (partial run-repl repl/add-missing-libspec))
+     (.command js/plugin "CCleanNS" #js {:eval "[getpos('.'), expand('%:p')]" :nargs 0} (partial run-repl repl/clean-ns))
      (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"} repl/rename-file)
      (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"} repl/rename-dir)
      (.command js/plugin "CRenameSymbol"
@@ -118,7 +145,8 @@
                (partial repl/extract-definition repl/rename-symbol))
      (.command js/plugin "CExtractFunction"
                #js {:eval "[expand('%:p'), getpos('.')]" :nargs 1}
-               (partial repl/find-used-locals run-transform transform/extract-function)))
+               (partial repl/find-used-locals run-transform transform/extract-function))
+     (.commandSync js/plugin "CMagicRequires" #js {:eval "[getpos('.'), expand('%:p'), expand('<cword>')]" :nargs 0} (partial run-repl repl/magic-requires)))
 
    (catch js/Error e
      (jdbg "main exception" e))))
