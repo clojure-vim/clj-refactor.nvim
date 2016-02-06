@@ -8,23 +8,47 @@
   (:require-macros
    [cljs.core.async.macros :refer [go]]))
 
+(defn handle-fireplace
+  [done-ch nvim args cb err results]
+  (js/debug (pr-str args) err results)
+  (try
+   (if-let [error (or err (aget (first results) "error"))]
+     (do
+      (.command nvim (str "echo \"Error: " error "\""))
+      (close! done-ch))
+     (do
+      (js/debug (:op args) results)
+      (cb (first results))))
+   (catch :default e
+     (js/debug "fireplace-message" (pr-str args) e e.stack)
+     (close! done-ch))))
 
 (defn fireplace-message
-  [nvim args cb]
-  ;; Most refactor commands work on saved files
-  (.command nvim "w"
-            (fn [err]
-              (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]) cb))))
+  ([nvim args cb]
+   (fireplace-message true (chan) nvim args cb))
+  ([done-ch nvim args cb]
+   (fireplace-message true done-ch nvim args cb))
+  ([save? done-ch nvim args cb]
+   (if save?
+     (.command nvim "w"
+               (fn [err]
+                 (.callFunction
+                  nvim "fireplace#message" (clj->js [(clj->js args)])
+                  (partial handle-fireplace done-ch nvim args cb))))
+     (.callFunction
+                nvim "fireplace#message" (clj->js [(clj->js args)])
+                (partial handle-fireplace done-ch nvim args cb)))))
 
 (defn nrepl-resolve-missing
   "Try to add a ns libspec based on whatever the middleware thinks."
   [done-ch run-transform nvim sym cursor]
   (fireplace-message
+   false
+   done-ch
    nvim
-   {:op "resolve-missing" :symbol (str sym) :debug "true"}
-   (fn [err results]
-     (try
-      (let [cstr (aget (first results) "candidates")]
+   {:op "resolve-missing" :symbol (str sym)}
+   (fn [result]
+     (let [cstr (aget result "candidates")]
         (if (seq cstr)
           (let [candidates (reader/read-string cstr)]
             (when (> (count candidates) 1)
@@ -35,27 +59,24 @@
               (close! done-ch))))
         (do
           (.command nvim "echo 'No candidates'")
-          (close! done-ch)))
-      (catch :default e
-        (js/debug "add-missing response exception" e e.stack))))))
+          (close! done-ch))))))
 
 (defn nrepl-namespace-aliases
   "Try to add a ns libspec based on already used aliases.
   Falls back to `resolve-missing`."
   [done-ch run-transform nvim sym cursor]
   (fireplace-message
+   false
+   done-ch
    nvim
-   {:op "namespace-aliases" :debug "true"}
-   (fn [err results]
-     (try
-      (let [cstr (aget (first results) "namespace-aliases")
+   {:op "namespace-aliases"}
+   (fn [result]
+     (let [cstr (aget result "namespace-aliases")
             aliases (reader/read-string cstr)
             sym-ns (namespace sym)]
         (if-let [missing (first (get-in aliases [:clj (symbol sym-ns)]))]
           (run-transform done-ch transform/add-candidate nvim [missing :ns sym-ns] cursor)
-          (nrepl-resolve-missing done-ch run-transform nvim sym cursor)))
-      (catch :default e
-        (js/debug "add-missing namespace-aliases" e e.stack))))))
+          (nrepl-resolve-missing done-ch run-transform nvim sym cursor))))))
 
 (defn add-missing-libspec
   "Asks repl for the missing libspec.
@@ -71,11 +92,11 @@
   When the repl comes back with response, run transform to add to ns"
   [done-ch run-transform nvim _ [cursor path]]
   (fireplace-message
+   done-ch
    nvim
    {:op "clean-ns" :path path :prefix-rewriting "false"}
-   (fn [err results]
-     (js/debug "clean-ns" err results)
-     (let [ns-str (aget (first results) "ns")]
+   (fn [result]
+     (let [ns-str (aget result "ns")]
        (if (string? ns-str)
          (run-transform
           done-ch transform/replace-ns nvim [(parser/parse-string ns-str)] cursor)
@@ -86,23 +107,19 @@
   (fireplace-message
    nvim
    {:op "rename-file-or-dir" :old-path current-file :new-path new-file}
-   (fn [err results]
-     (js/debug "rename-file" err results)
-     (if-let [touched (aget (first results) "touched")]
-       (.command nvim (str "e " new-file " | silent! bp | bd"))
-       (.command nvim (str "echo 'Nothing touched: " (str results) "'"))))))
+   (fn [result]
+     (let [touched (aget result "touched")]
+       (.command nvim (str "e " new-file " | silent! bp | bd"))))))
 
 (defn rename-dir
   [nvim [new-dir] current-dir]
   (fireplace-message
    nvim
    {:op "rename-file-or-dir" :old-path current-dir :new-path new-dir}
-   (fn [err results]
-     (js/debug "rename-dir" err results)
-     (if-let [touched (aget (first results) "touched")]
-       (.command nvim (str "e " new-dir " | silent! bp | bd"))
-       (.command nvim (str "echo \"Nothing touched: "
-                           (aget (first results) "error") "\""))))))
+   (fn [result]
+     (let [touched (aget result "touched")]
+       (.command nvim (str "e " new-dir " | silent! bp | bd"))))))
+
 
 (defn extract-definition
   [transform-fn nvim args [project-dir buffer-file buffer-ns word info [_ row col _]]]
@@ -117,9 +134,8 @@
       :name name
       :line row
       :column col}
-     (fn [err results]
-       (js/debug "extract-definition" err results)
-       (let [edn (aget (first results) "definition")
+     (fn [result]
+       (let [edn (aget result "definition")
              defs (reader/read-string edn)]
          (apply transform-fn nvim ns name defs args))))))
 
@@ -151,12 +167,9 @@
     :file file
     :line row
     :column col}
-   (fn [err results]
-     (js/debug "find-used-locals" err results)
-     (if-let [error (aget (first results) "error")]
-       (.command nvim (str "echo \"" error "\""))
-       (let [used-locals (seq (js->clj (aget (first results) "used-locals")))]
-        (run-transform transform-fn nvim (conj (js->clj args) used-locals) [0 row col 0]))))))
+   (fn [result]
+     (let [used-locals (seq (js->clj (aget result "used-locals")))]
+        (run-transform transform-fn nvim (conj (js->clj args) used-locals) [0 row col 0])))))
 
 (defn magic-requires
   [done-ch run-transform nvim args [cursor path word]]

@@ -20,3 +20,5 @@ noremap crcn :CCleanNS<CR>
 noremap crrd :CRenameDir 
 noremap crrf :CRenameFile 
 noremap crrs :CRenameSymbol 
+
+inoremap / /<ESC>:silent! CMagicRequires<CR>a
