@@ -13,7 +13,7 @@ All commands are mapped under the `cr` prefix and use a two letter mnemonic shor
 
 [Install node-host](https://github.com/neovim/node-host)
 
-[Install refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl) 2.0.0-SNAPSHOT
+[Install refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl)
 
 [Install vim-fireplace](https://github.com/tpope/vim-fireplace)
 
@@ -34,7 +34,7 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 
 ## Passive abilities
 
-- [ ] [Magic requires](https://github.com/clojure-emacs/clj-refactor.el/wiki#magic-require://github.com/clojure-emacs/clj-refactor.el/wiki#magic-requires)
+- [x] [Magic requires](https://github.com/clojure-emacs/clj-refactor.el/wiki#magic-require://github.com/clojure-emacs/clj-refactor.el/wiki#magic-requires) - experimental `autocmd FileType clojure inoremap <buffer> / /<ESC>:silent! CMagicRequires<CR>a`
 - [ ] [Automatic insertion of namespace declaration](https://github.com/clojure-emacs/clj-refactor.el/wiki#automatic-insertion-of-namespace-declaration)
 
 ## Commands

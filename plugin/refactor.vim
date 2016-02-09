@@ -21,4 +21,4 @@ autocmd FileType clojure noremap <buffer> crrd :CRenameDir
 autocmd FileType clojure noremap <buffer> crrf :CRenameFile 
 autocmd FileType clojure noremap <buffer> crrs :CRenameSymbol 
 
-autocmd FileType clojure inoremap <buffer> / /<ESC>:silent! CMagicRequires<CR>a
+" autocmd FileType clojure inoremap <buffer> / /<ESC>:silent! CMagicRequires<CR>a

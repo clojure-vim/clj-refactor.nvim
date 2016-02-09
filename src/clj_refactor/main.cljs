@@ -79,19 +79,23 @@
                       (fn [err buf]
                         (.getLineSlice buf 0 -1 true true
                                        (fn [err lines]
-                                         (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) row col (concat args static-args))]
-                                           (try
-                                            (jdbg "saving" row col)
-                                            (.setLineSlice buf 0 -1 true true (clj->js new-lines)
-                                                           (fn [err]
-                                                             (.command nvim (str "call cursor("row "," col")")
-                                                                       (fn [err]
-                                                                         (js/debug "closing")
-                                                                         (close! done-ch)))))
-                                            (catch :default e
-                                              (jdbg "save" e (.-stack e))))
-                                           (do
-                                            (js/debug "closing")
+                                         (try
+                                           (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) row col (concat args static-args))]
+                                             (try
+                                              (jdbg "saving" row col)
+                                              (.setLineSlice buf 0 -1 true true (clj->js new-lines)
+                                                             (fn [err]
+                                                               (.command nvim (str "call cursor("row "," col")")
+                                                                         (fn [err]
+                                                                           (js/debug "closing")
+                                                                           (close! done-ch)))))
+                                              (catch :default e
+                                                (jdbg "save" e (.-stack e))))
+                                             (do
+                                              (js/debug "closing")
+                                              (close! done-ch)))
+                                          (catch :default e
+                                            (.command nvim (str "echo \"" (.-message e) "\""))
                                             (close! done-ch)))))))
    (catch :default e
      (jdbg "run-transform" e))))
