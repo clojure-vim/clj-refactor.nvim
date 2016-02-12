@@ -90,11 +90,14 @@
 (defn clean-ns
   "Asks repl for the missing libspec.
   When the repl comes back with response, run transform to add to ns"
-  [done-ch run-transform nvim _ [cursor path]]
+  [done-ch run-transform nvim _ [cursor path prune-ns-form prefix-rewriting]]
   (fireplace-message
    done-ch
    nvim
-   {:op "clean-ns" :path path :prefix-rewriting "false"}
+   {:op "clean-ns"
+    :path path
+    :prefix-rewriting (if (pos? prefix-rewriting) "true" "false")
+    :prune-ns-form (if (pos? prune-ns-form) "true" "false")}
    (fn [result]
      (let [ns-str (aget result "ns")]
        (if (string? ns-str)

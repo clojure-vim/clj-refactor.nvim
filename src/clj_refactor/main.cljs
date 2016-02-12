@@ -141,7 +141,12 @@
 
      ;; REPL only commands
      (.command js/plugin "CAddMissingLibSpec" #js {:eval "[getpos('.'), expand('<cword>')]" :nargs 0} (partial run-repl repl/add-missing-libspec))
-     (.command js/plugin "CCleanNS" #js {:eval "[getpos('.'), expand('%:p')]" :nargs 0} (partial run-repl repl/clean-ns))
+     (.command js/plugin "CCleanNS"
+               #js {:eval (str "[getpos('.'), expand('%:p'),"
+                               " (exists('g:clj_refactor_prune_ns_form') ? g:clj_refactor_prune_ns_form : 1),"
+                               " (exists('g:clj_refactor_prefix_rewriting') ? g:clj_refactor_prefix_rewriting : 1)]")
+                    :nargs 0}
+               (partial run-repl repl/clean-ns))
      (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"} repl/rename-file)
      (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"} repl/rename-dir)
      (.command js/plugin "CRenameSymbol"

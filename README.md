@@ -32,6 +32,9 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 
 # Progress
 
+## Options
+You can set `g:clj_refactor_prune_ns_form` and `g:clj_refactor_prefix_rewriting` to `0` to affect the corresponding [middleware options](https://github.com/clojure-emacs/refactor-nrepl#configuration). Both default to `1`.
+
 ## Passive abilities
 
 - [x] [Magic requires](https://github.com/clojure-emacs/clj-refactor.el/wiki#magic-require://github.com/clojure-emacs/clj-refactor.el/wiki#magic-requires) - experimental `autocmd FileType clojure inoremap <buffer> / /<ESC>:silent! CMagicRequires<CR>a`
