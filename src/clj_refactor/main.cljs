@@ -129,6 +129,7 @@
      (.command js/plugin "CCyclePrivacy" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-privacy))
      (.command js/plugin "CCycleThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-thread))
      (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/expand-let))
+     (.command js/plugin "CExtractDef" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/extract-def))
      (.command js/plugin "CFunctionFromExample" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/function-from-example))
      (.command js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/introduce-let))
      (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/move-to-let))

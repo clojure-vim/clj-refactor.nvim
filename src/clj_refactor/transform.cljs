@@ -77,6 +77,18 @@
           (z/append-child bound-node)) ; readd bound node into let bindings
       zloc)))
 
+(defn extract-def
+  [zloc [def-name]]
+  (let [def-sexpr (z/sexpr zloc)
+        def-sym (symbol def-name)]
+    (-> zloc
+        (edit/to-root)
+        (edit/mark-position :first-occurrence)
+        (edit/replace-all-sexpr def-sexpr def-sym true)
+        (edit/find-mark :first-occurrence)
+        (z/insert-left (list 'def def-sym def-sexpr)) ; add declare
+        (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
+
 (defn add-declaration
   "Adds a declaration for the current symbol above the current top level form"
   [zloc _]

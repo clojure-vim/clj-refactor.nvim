@@ -4,7 +4,7 @@
               [clojure.string :as str]
               [clj-refactor.main :as m]
               [clj-refactor.transform :as t]
-              [clj-refactor.test-helper :refer [apply-zip apply-zip-to apply-zip-root]]))
+              [clj-refactor.test-helper :refer [apply-zip apply-zip-to apply-zip-root apply-zip-str-root]]))
 
 (deftest testing-introduce-let
   (are [i j] (= i j)
@@ -37,6 +37,16 @@
         '(if x (let [y (+ 2 2)] y) z)
         'let
         t/expand-let)))
+
+(deftest testing-extract-def
+  (are [i j] (= i j)
+       '(do (def my-def (a (b c)))
+            (defn first-fn [] (let [x my-def y my-def] (+ x y)))
+            (defn second-fn [] my-def))
+       (apply-zip-str-root (str "(defn first-fn [] (let [x (a (b c)) y (a (b c))] (+ x y)))\n"
+                                "(defn second-fn [] (a (b c)))")
+                           '(a (b c))
+                           #(t/extract-def % ["my-def"]))))
 
 (deftest testing-cycle-if
   (are [i j] (= i j)
@@ -102,7 +112,7 @@
   (are [i j] (= i j)
        '(do (defn my-fn [c] (a (b c)))
             (defn old-fn [] (let [c 1] (my-fn c))))
-        (apply-zip-root '(defn old-fn [] (let [c 1] (a (b c))))
-                        'a
-                        #(t/extract-function % ["my-fn" ["c"]]))))
+       (apply-zip-root '(defn old-fn [] (let [c 1] (a (b c))))
+                       'a
+                       #(t/extract-function % ["my-fn" ["c"]]))))
 

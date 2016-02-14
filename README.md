@@ -57,6 +57,7 @@ You can set `g:clj_refactor_prune_ns_form` and `g:clj_refactor_prefix_rewriting`
 - [ ] [describe-refactor](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/describe-refactor.gif)
 - [ ] [destructure-keys](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/destructure-keys.gif)
 - [x] `crel` [expand-let](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/expand-let.gif) * Doesn't yet replace other usages of bindings
+- [x] `cred` [extract-def](https://github.com/clojure-emacs/clj-refactor.el/wiki/cljr-extract-def)
 - [x] `cref` [extract-fn](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/extract-fn.gif)
 - [ ] [find-usages](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/find-usages.gif)
 - [ ] [hotload-dependency](https://github.com/clojure-emacs/clj-refactor.el/blob/master/examples/hotload-dependency.gif)

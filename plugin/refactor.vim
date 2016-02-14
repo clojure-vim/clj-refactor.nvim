@@ -5,6 +5,7 @@ autocmd FileType clojure noremap <buffer> crci :CCycleIf<CR>
 autocmd FileType clojure noremap <buffer> crcp :CCyclePrivacy<CR>
 autocmd FileType clojure noremap <buffer> crct :CCycleThread<CR>
 autocmd FileType clojure noremap <buffer> crel :CExpandLet<CR>
+autocmd FileType clojure noremap <buffer> cred :CExtractDef 
 autocmd FileType clojure noremap <buffer> cref :CExtractFunction 
 autocmd FileType clojure noremap <buffer> crfe :CFunctionFromExample<CR>
 autocmd FileType clojure noremap <buffer> cril :CIntroduceLet 

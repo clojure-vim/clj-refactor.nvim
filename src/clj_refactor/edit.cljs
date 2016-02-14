@@ -14,7 +14,9 @@
   (= nf/FormsNode (type (z/node loc))))
 
 (defn zdbg [loc msg]
-  (doto (z/sexpr loc) (prn msg))
+  (if (exists? js/debug)
+    (js/debug (pr-str (z/sexpr loc)) msg)
+    (doto (z/sexpr loc) (prn msg)))
   loc)
 
 (defn exec-to [loc f p?]
@@ -142,10 +144,31 @@
 
 (defn mark-position
   [zloc marker]
-  (z/replace zloc (assoc (z/node zloc) ::marker marker)))
+  (z/replace zloc (update (z/node zloc) ::markers (fnil conj #{}) marker)))
 
 (defn find-mark
   [zloc marker]
-  (if-let [mloc (z/find (to-root zloc) z/next (fn [loc] (= marker (get (z/node loc) ::marker))))]
+  (if-let [mloc (z/find (z/leftmost (to-root zloc)) z/next (fn [loc] (contains? (get (z/node loc) ::markers) marker)))]
     mloc
     zloc))
+
+(defn remove-mark
+  [zloc marker]
+  (z/replace zloc (update (z/node zloc) ::markers disj marker)))
+
+(defn find-first-sexpr
+  [zloc search-sexpr]
+  (-> zloc
+      (to-root)
+      (z/leftmost)
+      (z/find z/next #(= (z/sexpr %) search-sexpr))))
+
+(defn replace-all-sexpr
+  [zloc sexpr def-name mark?]
+  (if-let [found-loc (find-first-sexpr zloc sexpr)]
+    (let [new-loc (if mark?
+                    (mark-position (z/replace found-loc def-name) :new-cursor)
+                    (z/replace found-loc def-name))]
+      (recur new-loc sexpr def-name false))
+    zloc))
+

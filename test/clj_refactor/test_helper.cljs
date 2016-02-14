@@ -32,3 +32,10 @@
    (str "(do "
         (z/root-string (zip-to form goto f))
         ")")))
+
+(defn apply-zip-str-root
+  [form-str goto f]
+  (r/read-string
+   (str "(do "
+        (z/root-string (str-zip-to form-str goto f))
+        ")")))
