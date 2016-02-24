@@ -5,7 +5,7 @@
    [clj-refactor.edit :as edit]
    [clj-refactor.repl :as repl]
    [clj-refactor.transform :as transform]
-   [parinfer :as parinfer]
+   [cljfmt.core :as cljfmt]
    [clojure.string :as string]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]
@@ -61,8 +61,7 @@
                        (edit/find-mark :new-cursor)
                        (swap-position! new-cursor offset)
                        (z/root-string)
-                       (parinfer/parenMode)
-                       (aget "text"))]
+                       (cljfmt/reformat-string))]
      (let [[row col] @new-cursor]
        {:row row
         :col col

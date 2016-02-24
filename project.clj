@@ -5,10 +5,10 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.7.228"]
                  [org.clojure/core.async "0.2.374" :exclusions [org.clojure/tools.reader]]
-                 [rewrite-cljs "0.4.0" :exclusions [org.clojure/tools.reader]]]
+                 [rewrite-cljs "0.4.0" :exclusions [org.clojure/tools.reader]]
+                 [cljfmt "0.4.0"]]
 
   :npm {:dependencies [[source-map-support "0.3.3"]
-                       [parinfer "1.5.3"]
                        [ws "1.0.1"]]}
 
   :plugins [[lein-cljsbuild "1.1.1"]
@@ -33,10 +33,6 @@
                                    :optimizations :simple
                                    :target :nodejs
                                    :cache-analysis true
-                                   :foreign-libs [{:file "node_modules/parinfer/parinfer.js"
-                                                   :provides ["parinfer"]
-                                                   :module-type :commonjs}]
-                                   :closure-warnings {:const :off}
                                    :source-map "rplugin/node/clj-refactor.js.map"}}
                        {:id "fig-test"
                         :source-paths ["src" "test"]
@@ -45,9 +41,5 @@
                                    :output-to "target/out/tests.js"
                                    :output-dir "target/out"
                                    :target :nodejs
-                                   :foreign-libs [{:file "node_modules/parinfer/parinfer.js"
-                                                   :provides ["parinfer"]
-                                                   :module-type :commonjs}]
-                                   :closure-warnings {:const :off}
                                    :optimizations :none
                                    :source-map true}}]})
