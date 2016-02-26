@@ -60,8 +60,8 @@
                        (transformer args)
                        (edit/find-mark :new-cursor)
                        (swap-position! new-cursor offset)
-                       (z/root-string)
-                       (cljfmt/reformat-string))]
+                       (edit/format-all)
+                       (z/root-string))]
      (let [[row col] @new-cursor]
        {:row row
         :col col
@@ -70,7 +70,7 @@
      (jdbg "zip-it" e (.-stack e))
      (throw e))))
 
-(defn run-transform* [done-ch transformer nvim args [_ row col _] & static-args]
+(defn run-transform* [done-ch transformer nvim args [_ cur-row cur-col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
   (js/debug "transforming" (pr-str done-ch))
   (try
@@ -79,9 +79,9 @@
                         (.getLineSlice buf 0 -1 true true
                                        (fn [err lines]
                                          (try
-                                           (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) row col (concat args static-args))]
+                                           (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) cur-row cur-col (concat args static-args))]
                                              (try
-                                              (jdbg "saving" row col)
+                                              (jdbg "saving" cur-row cur-col row col)
                                               (.setLineSlice buf 0 -1 true true (clj->js new-lines)
                                                              (fn [err]
                                                                (.command nvim (str "call cursor("row "," col")")
@@ -138,6 +138,9 @@
      (.command js/plugin "CThreadLastAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-last-all))
      (.command js/plugin "CUnwindAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-all))
      (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-thread))
+
+     (.command js/plugin "CFormatAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/format-all))
+     (.command js/plugin "CFormatForm" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/format-form))
 
      ;; REPL only commands
      (.command js/plugin "CAddMissingLibSpec" #js {:eval "[getpos('.'), expand('<cword>')]" :nargs 0} (partial run-repl repl/add-missing-libspec))

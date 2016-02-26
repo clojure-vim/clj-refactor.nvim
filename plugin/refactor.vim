@@ -7,6 +7,8 @@ autocmd FileType clojure noremap <buffer> crct :CCycleThread<CR>
 autocmd FileType clojure noremap <buffer> crel :CExpandLet<CR>
 autocmd FileType clojure noremap <buffer> cred :CExtractDef 
 autocmd FileType clojure noremap <buffer> cref :CExtractFunction 
+autocmd FileType clojure noremap <buffer> crfa :CFormatAll<CR>
+autocmd FileType clojure noremap <buffer> crff :CFormatForm<CR>
 autocmd FileType clojure noremap <buffer> crfe :CFunctionFromExample<CR>
 autocmd FileType clojure noremap <buffer> cril :CIntroduceLet 
 autocmd FileType clojure noremap <buffer> crml :CMoveToLet 
@@ -21,5 +23,6 @@ autocmd FileType clojure noremap <buffer> crcn :CCleanNS<CR>
 autocmd FileType clojure noremap <buffer> crrd :CRenameDir 
 autocmd FileType clojure noremap <buffer> crrf :CRenameFile 
 autocmd FileType clojure noremap <buffer> crrs :CRenameSymbol 
+
 
 " autocmd FileType clojure inoremap <buffer> / /<ESC>:silent! CMagicRequires<CR>a

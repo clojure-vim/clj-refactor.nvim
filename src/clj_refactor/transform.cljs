@@ -1,9 +1,9 @@
 (ns clj-refactor.transform
   (:require
+   [clj-refactor.edit :as edit]
    [cljs.nodejs :as nodejs]
    [cljs.reader :as reader]
    [clojure.zip :as zz]
-   [clj-refactor.edit :as edit]
    [clojure.string :as string]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]
@@ -82,12 +82,14 @@
   (let [def-sexpr (z/sexpr zloc)
         def-sym (symbol def-name)]
     (-> zloc
-        (edit/to-root)
+        (edit/to-top)
         (edit/mark-position :first-occurrence)
         (edit/replace-all-sexpr def-sexpr def-sym true)
         (edit/find-mark :first-occurrence)
         (z/insert-left (list 'def def-sym def-sexpr)) ; add declare
-        (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
+        (z/insert-left (n/newline-node "\n\n")) ; add new line after location
+        (z/left)
+        (edit/format-form))))
 
 (defn add-declaration
   "Adds a declaration for the current symbol above the current top level form"
@@ -95,7 +97,7 @@
   (let [node (z/sexpr zloc)]
     (if (symbol? node)
       (-> zloc
-          (edit/to-root)
+          (edit/to-top)
           (z/insert-left (list 'declare node)) ; add declare
           (z/insert-left (n/newline-node "\n\n"))) ; add new line after location
       zloc)))
@@ -108,10 +110,10 @@
       (let [node (z/node zloc)
             coerce-to-next (fn [sexpr children]
                              (cond
-                              (map? sexpr) (n/vector-node children)
-                              (vector? sexpr) (n/set-node children)
-                              (set? sexpr) (n/list-node children)
-                              (list? sexpr) (n/map-node children)))]
+                               (map? sexpr) (n/vector-node children)
+                               (vector? sexpr) (n/set-node children)
+                               (set? sexpr) (n/list-node children)
+                               (list? sexpr) (n/map-node children)))]
         (-> zloc
             (z/insert-right (coerce-to-next sexpr (n/children node)))
             (z/remove)))
@@ -135,14 +137,15 @@
       (let [first-node (z/node first-loc)
             parent-op (z/sexpr (z/leftmost (z/up first-loc)))
             threaded? (= sym parent-op)]
-          (-> first-loc
-              (z/remove)
-              (z/up)
-              ((fn [loc] (cond-> loc
-                          (edit/single-child? loc) (-> z/down p/raise)
-                          (not threaded?) (-> (p/wrap-around :list) (z/insert-left sym)))))
-              (z/insert-left first-node)
-              (z/leftmost)))
+        (-> first-loc
+            (z/remove)
+            (z/up)
+            ((fn [loc] (cond-> loc
+                         (edit/single-child? loc) (-> z/down p/raise)
+                         (not threaded?) (-> (p/wrap-around :list) (z/insert-left sym)))))
+            (z/insert-left first-node)
+            (z/insert-left (n/newline-node "\n"))
+            (z/leftmost)))
       zloc)))
 
 (defn thread
@@ -215,7 +218,7 @@
   (-> zloc
       (edit/find-namespace)
       (cond->
-        (= missing-type :class)
+       (= missing-type :class)
         (->
          (edit/find-or-create-libspec :import) ; go to import
          (z/insert-right (n/newline-node "\n"))
@@ -238,16 +241,17 @@
   (-> zloc
       (edit/find-namespace)
       (z/insert-right new-ns)
-      (z/remove)))
+      (z/remove)
+      (edit/find-namespace)))
 
 (defn cycle-op
   [zloc a-op b-op]
   (if-let [oploc (edit/find-ops-up zloc a-op b-op)]
     (let [thread-type (z/sexpr oploc)]
       (cond
-       (= a-op thread-type) (z/replace oploc b-op)
-       (= b-op thread-type) (z/replace oploc a-op)
-       :else zloc))
+        (= a-op thread-type) (z/replace oploc b-op)
+        (= b-op thread-type) (z/replace oploc a-op)
+        :else zloc))
     zloc))
 
 (defn cycle-thread
@@ -269,9 +273,9 @@
                  arg
                  (symbol (str "arg" (inc i)))))]
     (-> example-loc
-      (edit/to-root)
-      (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
-      (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
+        (edit/to-top)
+        (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
+        (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
 
 (defn extract-function
   [zloc [fn-name used-locals]]
@@ -280,11 +284,16 @@
         fn-sym (symbol fn-name)
         used-syms (map symbol used-locals)]
     (-> expr-loc
-      (z/replace `(~fn-sym ~@used-syms))
-      (edit/mark-position :new-cursor)
-      (edit/to-root)
-      (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
-      (z/insert-left (n/newline-node "\n\n"))
-      (z/left)
-      (z/up))))
+        (z/replace `(~fn-sym ~@used-syms))
+        (edit/mark-position :new-cursor)
+        (edit/to-top)
+        (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
+        (z/insert-left (n/newline-node "\n\n")))))
 
+(defn format-form
+  [zloc _]
+  (edit/format-form zloc))
+
+(defn format-all
+  [zloc _]
+  (edit/format-all zloc))

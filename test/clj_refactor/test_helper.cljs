@@ -26,6 +26,12 @@
       (z/root-string)
       (r/read-string)))
 
+(defn apply-zip-str
+  [form-str goto f]
+  (-> form-str
+      (str-zip-to goto f)
+      (z/root-string)))
+
 (defn apply-zip-root
   [form goto f]
   (r/read-string

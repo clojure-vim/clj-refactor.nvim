@@ -1,5 +1,6 @@
 (ns clj-refactor.edit
- (:require
+  (:require
+   [cljfmt.core :as fmt]
    [clojure.string :as string]
    [clojure.zip :as cz]
    [rewrite-clj.node :as n]
@@ -15,20 +16,25 @@
 
 (defn zdbg [loc msg]
   (if (exists? js/debug)
-    (js/debug (pr-str (z/sexpr loc)) msg)
-    (doto (z/sexpr loc) (prn msg)))
+    (js/debug (pr-str (z/string loc)) msg)
+    (doto (z/string loc) (prn msg)))
   loc)
 
-(defn exec-to [loc f p?]
+(defn exec-while [loc f p?]
   (->> loc
        (iterate f)
        (take-while p?)
        last))
 
-(defn to-root [loc]
+(defn to-top [loc]
   (if (top? loc)
     loc
-    (exec-to loc z/up #(not (top? %)))))
+    (exec-while loc z/up (complement top?))))
+
+(defn to-first-top [loc]
+  (-> loc
+      (to-top)
+      (z/leftmost)))
 
 (defn parent-let? [zloc]
   (= 'let (-> zloc z/up z/leftmost z/sexpr)))
@@ -61,31 +67,31 @@
   (let [bind-node (z/node (z/next let-loc))]
     (if (parent-let? let-loc)
       (do
-       (-> let-loc
-           (z/right) ; move to inner binding
-           (z/right) ; move to inner body
-           (p/splice-killing-backward) ; splice into parent let
-           (z/leftmost) ; move to let
-           (z/right) ; move to parent binding
-           (z/append-child bind-node) ; place into binding
-           (z/down) ; move into binding
-           (z/rightmost) ; move to nested binding
-           (z/splice) ; remove nesting
-           (z/left)
-           (ws/append-newline)
-           (z/up) ; move to new binding
-           (z/leftmost))) ; move to let
+        (-> let-loc
+            (z/right) ; move to inner binding
+            (z/right) ; move to inner body
+            (p/splice-killing-backward) ; splice into parent let
+            (z/leftmost) ; move to let
+            (z/right) ; move to parent binding
+            (z/append-child bind-node) ; place into binding
+            (z/down) ; move into binding
+            (z/rightmost) ; move to nested binding
+            (z/splice) ; remove nesting
+            (z/left)
+            (ws/append-newline)
+            (z/up) ; move to new binding
+            (z/leftmost))) ; move to let
       let-loc)))
 
 (defn remove-right [zloc]
   (-> zloc
-    (zu/remove-right-while ws/whitespace?)
-    (zu/remove-right-while (complement ws/whitespace?))))
+      (zu/remove-right-while ws/whitespace?)
+      (zu/remove-right-while (complement ws/whitespace?))))
 
 (defn remove-left [zloc]
   (-> zloc
-    (zu/remove-left-while ws/whitespace?)
-    (zu/remove-left-while (complement ws/whitespace?))))
+      (zu/remove-left-while ws/whitespace?)
+      (zu/remove-left-while (complement ws/whitespace?))))
 
 (defn transpose-with-right
   [zloc]
@@ -107,7 +113,7 @@
 
 (defn find-namespace [zloc]
   (-> zloc
-      (z/find z/up top?) ; go to outer form
+      (to-first-top) ; go to top form
       (z/find-next-value z/next 'ns) ; go to ns
       (z/up))) ; ns form
 
@@ -123,12 +129,18 @@
         z/down
         z/down)))
 
+(defn remove-children
+  [zloc]
+  (if (z/seq? zloc)
+    (z/replace zloc (n/replace-children (z/node zloc) []))
+    zloc))
+
 (defn remove-all-after
   [zloc]
-  (loop [zloc (zu/remove-right-while zloc (constantly true))]
-    (if-let [uploc (z/up zloc)]
+  (loop [loc (zu/remove-right-while (remove-children zloc) (constantly true))]
+    (if-let [uploc (z/up loc)]
       (recur (zu/remove-right-while uploc (constantly true)))
-      zloc)))
+      loc)))
 
 (defn read-position
   [old-pos zloc offset]
@@ -148,7 +160,7 @@
 
 (defn find-mark
   [zloc marker]
-  (if-let [mloc (z/find (z/leftmost (to-root zloc)) z/next (fn [loc] (contains? (get (z/node loc) ::markers) marker)))]
+  (if-let [mloc (z/find (to-first-top zloc) z/next (fn [loc] (contains? (get (z/node loc) ::markers) marker)))]
     mloc
     zloc))
 
@@ -159,8 +171,7 @@
 (defn find-first-sexpr
   [zloc search-sexpr]
   (-> zloc
-      (to-root)
-      (z/leftmost)
+      (to-first-top)
       (z/find z/next #(= (z/sexpr %) search-sexpr))))
 
 (defn replace-all-sexpr
@@ -172,3 +183,16 @@
       (recur new-loc sexpr def-name false))
     zloc))
 
+(defn format-form
+  [zloc]
+  (let [expr-loc (to-top zloc)
+        formatted-node (fmt/reformat-form (z/node expr-loc) {})]
+    (z/replace expr-loc formatted-node)))
+
+(defn format-all
+  [zloc]
+  (loop [top-loc (to-first-top zloc)]
+    (let [formatted (format-form top-loc)]
+      (if (z/rightmost? formatted)
+        formatted
+        (recur (z/right formatted))))))

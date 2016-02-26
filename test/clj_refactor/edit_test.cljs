@@ -7,7 +7,7 @@
    [cljs.test :refer-macros [deftest is testing run-tests are]]
    [clojure.string :as str]
    [clj-refactor.edit :as e]
-   [clj-refactor.test-helper :refer [str-zip-to zip-to apply-zip apply-zip-to]]))
+   [clj-refactor.test-helper :refer [str-zip-to zip-to apply-zip apply-zip-str apply-zip-to]]))
 
 (deftest test-remove-right
   (are [i j] (= i j)
@@ -76,10 +76,17 @@
               (z/sexpr))))))
 
 (deftest test-read-position
-  (is (= [1 5]
-         (str-zip-to "(a (b c))\n(x (y z))" 'b #(e/read-position [55 44] % 0))))
+  (is (= [1 4]
+         (str-zip-to "(a (b c))\n(x (y z))" '(b c) #(e/read-position [55 44] % 0))))
   (is (= [2 2]
          (str-zip-to "(a (b c))\n(x (y z))" 'x #(e/read-position [55 44] % 0))))
-  (is (= [2 4]
-         (str-zip-to "(a (b c))\n(xero (y z))" 'xero #(e/read-position [55 44] % 2)))))
+  (is (= [2 6]
+         (str-zip-to "(a (b c)\n  (xero (y z)))" 'xero #(e/read-position [0 5] % 2)))))
 
+(deftest test-format-form
+  (are [i j] (= i j)
+    "(a\n (b\n  c))" (apply-zip-str "(a\n(b\nc))" 'b e/format-form)
+    "(a\n (b\n  c))\n(d\ne)" (apply-zip-str "(a\n(b\nc))\n(d\ne)" 'b e/format-form)
+
+    "(a\n (b\n  c))" (apply-zip-str "(a\n(b\nc))" 'b e/format-all)
+    "(a\n (b\n  c))\n(d\n e)" (apply-zip-str "(a\n(b\nc))\n(d\ne)" 'b e/format-all)))
