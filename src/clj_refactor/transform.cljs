@@ -14,7 +14,8 @@
    [rewrite-clj.zip.findz :as zf]
    [rewrite-clj.zip.removez :as zr]
    [rewrite-clj.zip.utils :as zu]
-   [rewrite-clj.zip.whitespace :as ws]))
+   [rewrite-clj.zip.whitespace :as ws]
+   [fipp.clojure :as fipp]))
 
 (defn introduce-let
   "Adds a let around the current form."
@@ -273,6 +274,13 @@
       (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
       (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
 
+(defn pretty-up-form
+  [form]
+  (z/node
+    (z/of-string
+      (with-out-str
+        (fipp/pprint form {:width 1})))))
+
 (defn extract-function
   [zloc [fn-name used-locals]]
   (let [expr-loc (z/up (edit/find-op zloc))
@@ -283,7 +291,7 @@
       (z/replace `(~fn-sym ~@used-syms))
       (edit/mark-position :new-cursor)
       (edit/to-root)
-      (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
+      (z/insert-left (pretty-up-form `(~'defn ~fn-sym [~@used-syms] ~expr)))
       (z/insert-left (n/newline-node "\n\n"))
       (z/left)
       (z/up))))
