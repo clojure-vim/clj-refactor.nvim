@@ -6,7 +6,8 @@
                  [org.clojure/clojurescript "1.7.228"]
                  [org.clojure/core.async "0.2.374" :exclusions [org.clojure/tools.reader]]
                  [rewrite-cljs "0.4.0" :exclusions [org.clojure/tools.reader]]
-                 [cljfmt "0.4.0"]]
+                 [cljfmt "0.4.0"]
+                 [fipp "0.6.4"]]
 
   :npm {:dependencies [[source-map-support "0.3.3"]
                        [ws "1.0.1"]]}
