@@ -79,16 +79,19 @@
 (defn extract-def
   [zloc [def-name]]
   (let [def-sexpr (z/sexpr zloc)
+        def-node (z/node zloc)
         def-sym (symbol def-name)]
     (-> zloc
         (edit/to-top)
         (edit/mark-position :first-occurrence)
         (edit/replace-all-sexpr def-sexpr def-sym true)
         (edit/find-mark :first-occurrence)
-        (z/insert-left (list 'def def-sym def-sexpr)) ; add declare
+        (z/insert-left (list 'def def-sym)) ; add declare
         (z/insert-left (n/newline-node "\n\n")) ; add new line after location
         (z/left)
-        (edit/format-form))))
+        (z/append-child (n/newline-node "\n"))
+        (z/append-child def-node)
+        (z/up))))
 
 (defn add-declaration
   "Adds a declaration for the current symbol above the current top level form"
@@ -279,15 +282,19 @@
 (defn extract-function
   [zloc [fn-name used-locals]]
   (let [expr-loc (z/up (edit/find-op zloc))
+        expr-node (z/node expr-loc)
         expr (z/sexpr expr-loc)
         fn-sym (symbol fn-name)
-        used-syms (map symbol used-locals)]
+        used-syms (mapv symbol used-locals)]
     (-> expr-loc
         (z/replace `(~fn-sym ~@used-syms))
         (edit/mark-position :new-cursor)
         (edit/to-top)
-        (z/insert-left `(~'defn ~fn-sym [~@used-syms] ~expr))
-        (z/insert-left (n/newline-node "\n\n")))))
+        (z/insert-left (list 'defn fn-sym used-syms))
+        (z/insert-left (n/newline-node "\n\n"))
+        (z/left)
+        (z/append-child (n/newline-node "\n"))
+        (z/append-child expr-node))))
 
 (defn format-form
   [zloc _]
