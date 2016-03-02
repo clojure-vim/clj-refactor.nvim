@@ -67,9 +67,8 @@
         binding-sym (symbol binding-name)]
     (if-let [let-loc (z/find-value zloc z/prev 'let)] ; find first ancestor let
       (-> zloc
-          (z/remove) ; remove bound-node and newline
-          (ws/append-newline) ; newline to be placed after binding-symbol
           (z/insert-right binding-sym) ; replace it with binding-symbol
+          (z/remove) ; remove bound-node and newline
           (z/find-value z/prev 'let) ; move to ancestor let
           (z/next) ; move to binding
           (z/append-child (n/newline-node "\n")) ; insert let and bindings backwards
@@ -219,22 +218,22 @@
       (edit/find-namespace)
       (cond->
        (= missing-type :class)
-        (->
-         (edit/find-or-create-libspec :import) ; go to import
-         (z/insert-right (n/newline-node "\n"))
-         (z/insert-right (symbol missing)))  ; add class
+       (->
+        (edit/find-or-create-libspec :import) ; go to import
+        (z/insert-right (n/newline-node "\n"))
+        (z/insert-right (symbol missing)))  ; add class
 
-        (= missing-type :ns)
-        (->
-         (edit/find-or-create-libspec :require) ; go to require
-         (z/insert-right (n/newline-node "\n"))
-         (z/insert-right [(symbol missing)]) ; add require vec and ns
-         (z/right))
+       (= missing-type :ns)
+       (->
+        (edit/find-or-create-libspec :require) ; go to require
+        (z/insert-right (n/newline-node "\n"))
+        (z/insert-right [(symbol missing)]) ; add require vec and ns
+        (z/right))
 
-        (and sym-ns (= missing-type :ns)) ; if there was a requested ns `str/trim`
-        (->
-         (z/append-child :as) ; add :as
-         (z/append-child (symbol sym-ns)))))) ; as prefix
+       (and sym-ns (= missing-type :ns)) ; if there was a requested ns `str/trim`
+       (->
+        (z/append-child :as) ; add :as
+        (z/append-child (symbol sym-ns)))))) ; as prefix
 
 (defn replace-ns
   [zloc [new-ns]]
