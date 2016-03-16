@@ -161,9 +161,13 @@
   [zloc marker]
   (z/replace zloc (update (z/node zloc) ::markers (fnil conj #{}) marker)))
 
+(defn find-mark-or-nil
+  [zloc marker]
+  (z/find (to-first-top zloc) z/next (fn [loc] (contains? (get (z/node loc) ::markers) marker))))
+
 (defn find-mark
   [zloc marker]
-  (if-let [mloc (z/find (to-first-top zloc) z/next (fn [loc] (contains? (get (z/node loc) ::markers) marker)))]
+  (if-let [mloc (find-mark-or-nil zloc marker)]
     mloc
     zloc))
 
@@ -183,7 +187,7 @@
     (let [new-loc (if mark?
                     (mark-position (z/replace found-loc def-name) :new-cursor)
                     (z/replace found-loc def-name))]
-      (recur new-loc sexpr def-name false))
+      (recur (mark-position new-loc :reformat) sexpr def-name false))
     zloc))
 
 (defn format-form
@@ -199,3 +203,10 @@
       (if (z/rightmost? formatted)
         formatted
         (recur (z/right formatted))))))
+
+(defn format-marked
+  [zloc]
+  (let [floc (find-mark-or-nil (to-first-top zloc) :reformat)]
+    (cond
+      floc (recur (z/replace floc (fmt/reformat-form (z/node (remove-mark floc :reformat)) {})))
+      :else zloc)))

@@ -73,7 +73,8 @@
           (z/next) ; move to binding
           (z/append-child (n/newline-node "\n")) ; insert let and bindings backwards
           (z/append-child binding-sym) ; add binding symbol
-          (z/append-child bound-node)) ; readd bound node into let bindings
+          (z/append-child bound-node) ; read bound node into let bindings
+          (z/up))
       zloc)))
 
 (defn extract-def
@@ -90,8 +91,7 @@
         (z/insert-left (n/newline-node "\n\n")) ; add new line after location
         (z/left)
         (z/append-child (n/newline-node "\n"))
-        (z/append-child def-node)
-        (z/up))))
+        (z/append-child def-node))))
 
 (defn add-declaration
   "Adds a declaration for the current symbol above the current top level form"
@@ -101,7 +101,8 @@
       (-> zloc
           (edit/to-top)
           (z/insert-left (list 'declare node)) ; add declare
-          (z/insert-left (n/newline-node "\n\n"))) ; add new line after location
+          (z/insert-left (n/newline-node "\n\n")) ; add new line after location
+          (z/left))
       zloc)))
 
 (defn cycle-coll
@@ -219,6 +220,7 @@
   [zloc [missing missing-type sym-ns]]
   (-> zloc
       (edit/find-namespace)
+      (edit/mark-position :reformat)
       (cond->
        (= missing-type :class)
        (->
@@ -288,6 +290,7 @@
         used-syms (mapv symbol used-locals)]
     (-> expr-loc
         (z/replace `(~fn-sym ~@used-syms))
+        (edit/mark-position :reformat)
         (edit/mark-position :new-cursor)
         (edit/to-top)
         (z/insert-left (list 'defn fn-sym used-syms))

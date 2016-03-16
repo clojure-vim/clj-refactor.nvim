@@ -58,9 +58,10 @@
                        ;; TODO should check if anything has changed
                        ;; - should return nil if transformer returned nil
                        (transformer args)
+                       (edit/mark-position :reformat)
+                       (edit/format-marked)
                        (edit/find-mark :new-cursor)
                        (swap-position! new-cursor offset)
-                       (edit/format-all)
                        (z/root-string))]
      (let [[row col] @new-cursor]
        {:row row
@@ -72,7 +73,6 @@
 
 (defn run-transform* [done-ch transformer nvim args [_ cur-row cur-col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
-  (js/debug "transforming" (pr-str done-ch))
   (try
    (.getCurrentBuffer nvim
                       (fn [err buf]
@@ -81,18 +81,14 @@
                                          (try
                                            (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) cur-row cur-col (concat args static-args))]
                                              (try
-                                              (jdbg "saving" cur-row cur-col row col)
                                               (.setLineSlice buf 0 -1 true true (clj->js new-lines)
                                                              (fn [err]
                                                                (.command nvim (str "call cursor("row "," col")")
                                                                          (fn [err]
-                                                                           (js/debug "closing")
                                                                            (close! done-ch)))))
                                               (catch :default e
                                                 (jdbg "save" e (.-stack e))))
-                                             (do
-                                              (js/debug "closing")
-                                              (close! done-ch)))
+                                             (close! done-ch))
                                           (catch :default e
                                             (.command nvim (str "echo \"" (.-message e) "\""))
                                             (close! done-ch)))))))
@@ -108,13 +104,10 @@
 
 (defn run-repl
   [fn-thing nvim args static-args callback]
-  (js/debug args static-args)
   (go
     (let [done-ch (chan)]
       (fn-thing done-ch run-transform* nvim args static-args)
-      (js/debug "run-repl waiting on done")
       (<! done-ch)
-      (js/debug "run-repl done")
       (when callback
         (callback 0)))))
 
