@@ -144,15 +144,18 @@
 
 (defn read-position
   [old-pos zloc offset]
-  (-> zloc
-      (remove-all-after)
-      (z/root-string)
-      (z/of-string)
-      (z/rightmost)
-      (z/find-next-depth-first (comp z/end? z/next))
-      (z/node)
-      (meta)
-      ((juxt :row (comp (partial + offset) :col)))))
+  (let [n (-> zloc
+              (remove-all-after)
+              (z/root-string)
+              (z/of-string)
+              (z/rightmost)
+              (z/find-next-depth-first (comp z/end? z/next)))]
+    (if n
+      (-> n
+          (z/node)
+          (meta)
+          ((juxt :row (comp (partial + offset) :col))))
+      old-pos)))
 
 (defn mark-position
   [zloc marker]
