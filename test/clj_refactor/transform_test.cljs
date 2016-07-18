@@ -70,15 +70,17 @@
 
 (deftest thread
   (are [i j] (= i j)
-    '(-> a b) (apply-zip '(b a) 'b t/thread)
-    '(-> a b c) (apply-zip '(-> (b a) c) 'b t/thread)
-    '(->> a (b c)) (apply-zip '(b c a) 'b t/thread-last)))
+       '(-> a b) (apply-zip '(b a) 'b t/thread)
+       '(-> a b c) (apply-zip '(-> (b a) c) 'b t/thread)
+       '(->> a (b c)) (apply-zip '(b c a) 'b t/thread-last)
+       '(->> c (a (b :x :y))) (apply-zip '(a (b :x :y) c) 'a t/thread-last)))
 
 (deftest testing-thread-all
   (are [i j] (= i j)
-    '(-> a b c d e) (apply-zip '(e (d (c (b a)))) 'e t/thread-first-all)
-    '(-> a b c (d d') e) (apply-zip '(e (d (c (b a)) d')) 'e t/thread-first-all)
-    '(->> a b c (d d') e) (apply-zip '(e (d d' (c (b a)))) 'e t/thread-last-all)))
+       '(-> a b c d e) (apply-zip '(e (d (c (b a)))) 'e t/thread-first-all)
+       '(-> a b c (d d') e) (apply-zip '(e (d (c (b a)) d')) 'e t/thread-first-all)
+       '(->> a b c (d d') e) (apply-zip '(e (d d' (c (b a)))) 'e t/thread-last-all)
+       '(->> d (c (fn [x] (y x))) (a (b :x :y))) (apply-zip '(a (b :x :y) (c (fn [x] (y x)) d)) 'a t/thread-last-all)))
 
 (deftest testing-unwind-thread
   (are [i j] (= i j)

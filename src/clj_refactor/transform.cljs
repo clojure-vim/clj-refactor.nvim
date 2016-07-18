@@ -141,7 +141,8 @@
             parent-op (z/sexpr (z/leftmost (z/up first-loc)))
             threaded? (= sym parent-op)]
         (-> first-loc
-            (z/remove)
+            (z/left)
+            (edit/remove-right)
             (z/up)
             ((fn [loc] (cond-> loc
                          (edit/single-child? loc) (-> z/down p/raise)
