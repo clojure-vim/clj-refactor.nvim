@@ -24,7 +24,7 @@
         (p/wrap-around :list) ; wrap with new let list
         (z/up) ; move to new let list
         (z/insert-child 'let) ; add let
-        (z/append-child (n/newline-node "\n")) ; add new line after location
+        (zz/append-child (n/newlines 1)) ; add new line after location
         (z/append-child sym) ; add new symbol to body of let
         (z/down) ; enter let list
         (z/next) ; skip 'let
@@ -54,7 +54,7 @@
           (z/up) ; go to form container
           (p/wrap-around :list) ; wrap with new let list
           (z/up) ; move to new let list
-          (z/insert-child (n/newline-node "\n")) ; insert let and bindings backwards
+          (zz/insert-child (n/newlines 1)) ; insert let and bindings backwards
           (z/insert-child bind-node)
           (z/insert-child 'let)
           (z/leftmost) ; go to let
@@ -71,7 +71,7 @@
           (z/remove) ; remove bound-node and newline
           (z/find-value z/prev 'let) ; move to ancestor let
           (z/next) ; move to binding
-          (z/append-child (n/newline-node "\n")) ; insert let and bindings backwards
+          (zz/append-child (n/newlines 1)) ; insert let and bindings backwards
           (z/append-child binding-sym) ; add binding symbol
           (z/append-child bound-node) ; read bound node into let bindings
           (z/up))
@@ -87,10 +87,10 @@
         (edit/mark-position :first-occurrence)
         (edit/replace-all-sexpr def-sexpr def-sym true)
         (edit/find-mark :first-occurrence)
-        (z/insert-left (list 'def def-sym)) ; add declare
-        (z/insert-left (n/newline-node "\n\n")) ; add new line after location
+        (zz/insert-left (n/coerce (list 'def def-sym))) ; add declare
+        (zz/insert-left (n/newlines 2)) ; add new line after location
         (z/left)
-        (z/append-child (n/newline-node "\n"))
+        (zz/append-child (n/newlines 1))
         (z/append-child def-node))))
 
 (defn add-declaration
@@ -100,8 +100,8 @@
     (if (symbol? node)
       (-> zloc
           (edit/to-top)
-          (z/insert-left (list 'declare node)) ; add declare
-          (z/insert-left (n/newline-node "\n\n")) ; add new line after location
+          (zz/insert-left (n/coerce (list 'declare node))) ; add declare
+          (zz/insert-left (n/newlines 2)) ; add new line after location
           (z/left))
       zloc)))
 
@@ -147,8 +147,8 @@
             ((fn [loc] (cond-> loc
                          (edit/single-child? loc) (-> z/down p/raise)
                          (not threaded?) (-> (p/wrap-around :list) (z/insert-left sym)))))
-            (z/insert-left first-node)
-            (z/insert-left (n/newline-node "\n"))
+            (zz/insert-left first-node)
+            (zz/insert-left (n/newlines 1))
             (z/leftmost)))
       zloc)))
 
@@ -226,13 +226,13 @@
        (= missing-type :class)
        (->
         (edit/find-or-create-libspec :import) ; go to import
-        (z/insert-right (n/newline-node "\n"))
+        (zz/insert-right (n/newlines 1))
         (z/insert-right (symbol missing)))  ; add class
 
        (= missing-type :ns)
        (->
         (edit/find-or-create-libspec :require) ; go to require
-        (z/insert-right (n/newline-node "\n"))
+        (zz/insert-right (n/newlines 1))
         (z/insert-right [(symbol missing)]) ; add require vec and ns
         (z/right))
 
@@ -279,8 +279,8 @@
                  (symbol (str "arg" (inc i)))))]
     (-> example-loc
         (edit/to-top)
-        (z/insert-left `(~'defn ~fn-name [~@args])) ; add declare
-        (z/insert-left (n/newline-node "\n\n"))))) ; add new line after location
+        (zz/insert-left (n/coerce `(~'defn ~fn-name [~@args]))) ; add declare
+        (zz/insert-left (n/newlines 2))))) ; add new line after location
 
 (defn extract-function
   [zloc [fn-name used-locals]]
@@ -294,10 +294,10 @@
         (edit/mark-position :reformat)
         (edit/mark-position :new-cursor)
         (edit/to-top)
-        (z/insert-left (list 'defn fn-sym used-syms))
-        (z/insert-left (n/newline-node "\n\n"))
+        (zz/insert-left (n/coerce (list 'defn fn-sym used-syms)))
+        (zz/insert-left (n/newlines 2))
         (z/left)
-        (z/append-child (n/newline-node "\n"))
+        (zz/append-child (n/newlines 1))
         (z/append-child expr-node))))
 
 (defn format-form
