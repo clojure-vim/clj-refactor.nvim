@@ -6,37 +6,21 @@
             [clj-refactor.transform :as t]
             [clj-refactor.test-helper :refer [apply-zip apply-zip-to apply-zip-root apply-zip-str-root]]))
 
+(deftest testing-main
+  (is (= {:row 1, :col 1, :new-lines ["(a #\"/\")"]} (m/zip-it identity ["(a #\"/\")"] 1 1 []))))
+
 (deftest testing-introduce-let
   (are [i j] (= i j)
-    '(defn [bar]
-       (let [x (+ 1 1)
-             foo (- 1 x)]
-         foo))
-    (apply-zip
-     '(defn [bar]
-        (let [x (+ 1 1)]
-          (- 1 x)))
-     '(- 1 x)
-     #(t/introduce-let % ["foo"]))))
+       '(let [x (+ 1 1) foo (- 1 x)] foo)
+       (apply-zip '(let [x (+ 1 1)] (- 1 x)) '(- 1 x) #(t/introduce-let % ["foo"]))))
 
 (deftest testing-expand-let
   (are [i j] (= i j)
-    '(defn [bar]
-       (let [y (+ 2 2)
-             x (+ 1 1)]
-         (- x)))
-    (apply-zip
-     '(defn [bar]
-        (let [y (+ 2 2)]
-          (let [x (+ 1 1)]
-            (- x))))
-     '(- x)
-     t/expand-let)
+    '(let [y (+ 2 2) x (+ 1 1)] (- x))
+    (apply-zip '(let [y (+ 2 2)] (let [x (+ 1 1)] (- x))) '(- x) t/expand-let)
+
     '(let [y (+ 2 2)] (if x y z))
-    (apply-zip
-     '(if x (let [y (+ 2 2)] y) z)
-     'let
-     t/expand-let)))
+    (apply-zip '(if x (let [y (+ 2 2)] y) z) 'let t/expand-let)))
 
 (deftest test-move-to-let
   (are [i j] (= i j)

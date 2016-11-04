@@ -89,4 +89,5 @@
     "(a\n (b\n  c))\n(d\ne)" (apply-zip-str "(a\n(b\nc))\n(d\ne)" 'b e/format-form)
 
     "(a\n (b\n  c))" (apply-zip-str "(a\n(b\nc))" 'b e/format-all)
-    "(a\n (b\n  c))\n(d\n e)" (apply-zip-str "(a\n(b\nc))\n(d\ne)" 'b e/format-all)))
+    "(a\n (b\n  c))\n(d\n e)" (apply-zip-str "(a\n(b\nc))\n(d\ne)" 'b e/format-all)
+    "(a #\"http://foo.bar\")" (apply-zip-str "(a #\"http://foo.bar\")" 'a e/format-form)))
