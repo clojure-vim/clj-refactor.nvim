@@ -5,6 +5,7 @@
    [clj-refactor.edit :as edit]
    [clj-refactor.repl :as repl]
    [clj-refactor.transform :as transform]
+   [clj-refactor.util :refer [echo-err]]
    [cljfmt.core :as cljfmt]
    [clojure.string :as string]
    [goog.object :as object]
@@ -93,7 +94,7 @@
          (fn [_]
            (close! done-ch)))
         (.catch (fn [e]
-                  (.command nvim (str "echoerr \"" (.-message e) "\""))
+                  (echo-err nvim (.-message e))
                   (close! done-ch))))
     (catch :default e
       (jdbg "run-transform" e))))
@@ -120,7 +121,7 @@
     (channel-promise done-ch)))
 
 (defn legacy-opts-wrap-fn
-  [plugin f opts]
+  [f plugin opts]
   (fn [args]
     (let [nvim (.-nvim plugin)]
       (-> (if (:eval opts)
@@ -136,7 +137,8 @@
   ([plugin name f opts]
    (.registerCommand plugin
                      name
-                     (legacy-opts-wrap-fn plugin f opts)
+                     (-> f
+                         (legacy-opts-wrap-fn plugin opts))
                      (clj->js (dissoc opts :eval)))))
 
 (defn ^:export -main [plugin]

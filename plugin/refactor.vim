@@ -26,3 +26,11 @@ autocmd FileType clojure noremap <buffer> crrs :CRenameSymbol
 
 
 " autocmd FileType clojure inoremap <buffer> / /<ESC>:silent! CMagicRequires<CR>a
+
+function! Refactor_echo(val)
+  echo string(a:val)
+endf
+
+function! Refactor_echoerr(val)
+  echohl Error | echom a:val | echohl None
+endf

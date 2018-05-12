@@ -34184,6 +34184,10 @@ cljs.core.async.partition_by.cljs$core$IFn$_invoke$arity$3 = function(a, b, c) {
   return c;
 };
 cljs.core.async.partition_by.cljs$lang$maxFixedArity = 3;
+clj_refactor.util = {};
+clj_refactor.util.echo_err = function(a, b) {
+  return a.callFunction("Refactor_echoerr", "string" === typeof b ? b : cljs.core.pr_str.call(null, b));
+};
 clj_refactor.repl = {};
 clj_refactor.repl.handle_fireplace = function(a, b, c, d, e) {
   console.debug("First debug of handle-fireplace", cljs.core.pr_str.call(null, c), cljs.core.pr_str.call(null, e));
@@ -34219,10 +34223,10 @@ clj_refactor.repl.fireplace_message.cljs$core$IFn$_invoke$arity$5 = function(a, 
     return c.callFunction("fireplace#message", cljs.core.clj__GT_js.call(null, new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs.core.clj__GT_js.call(null, d)], null)));
   }).catch(function(a) {
     console.debug(cljs.core.pr_str.call(null, d), a);
-    c.command([cljs.core.str.cljs$core$IFn$_invoke$arity$1('echoerr "Error: '), cljs.core.str.cljs$core$IFn$_invoke$arity$1(a), cljs.core.str.cljs$core$IFn$_invoke$arity$1('"')].join(""));
+    clj_refactor.util.echo_err.call(null, c, [cljs.core.str.cljs$core$IFn$_invoke$arity$1("Error: "), cljs.core.str.cljs$core$IFn$_invoke$arity$1(a)].join(""));
     return cljs.core.async.close_BANG_.call(null, b);
   }).then(cljs.core.partial.call(null, clj_refactor.repl.handle_fireplace, b, c, d, e)).catch(function(a) {
-    c.command([cljs.core.str.cljs$core$IFn$_invoke$arity$1('echo "Error: '), cljs.core.str.cljs$core$IFn$_invoke$arity$1([cljs.core.str.cljs$core$IFn$_invoke$arity$1(a.message), cljs.core.str.cljs$core$IFn$_invoke$arity$1((new cljs.core.Keyword(null, "message", "message", -406056002)).cljs$core$IFn$_invoke$arity$1(cljs.core.ex_data.call(null, a)))].join("")), cljs.core.str.cljs$core$IFn$_invoke$arity$1('"')].join(""));
+    clj_refactor.util.echo_err.call(null, c, [cljs.core.str.cljs$core$IFn$_invoke$arity$1("Error: "), cljs.core.str.cljs$core$IFn$_invoke$arity$1([cljs.core.str.cljs$core$IFn$_invoke$arity$1(a.message), cljs.core.str.cljs$core$IFn$_invoke$arity$1((new cljs.core.Keyword(null, "message", "message", -406056002)).cljs$core$IFn$_invoke$arity$1(cljs.core.ex_data.call(null, a)))].join(""))].join(""));
     return cljs.core.async.close_BANG_.call(null, b);
   });
 };
@@ -34368,8 +34372,8 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               var k = cljs.core.async.chan.call(null);
               h = (new cljs.core.Keyword(null, "definition", "definition", -1198729982)).cljs$core$IFn$_invoke$arity$1(d);
               var l = cljs.core.not.call(null, null == h);
-              f[7] = h;
               f[8] = k;
+              f[7] = h;
               f[1] = l ? 2 : 3;
               return new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
@@ -34377,17 +34381,17 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               var r = f[9];
               var t = f[10];
               var u = f[11];
-              var v = f[12];
               k = f[8];
+              var v = f[12];
               var w = f[13];
               var x = f[2], z = cljs.core.get.call(null, x, new cljs.core.Keyword(null, "line-beg", "line-beg", -1940810773)), y = cljs.core.get.call(null, x, new cljs.core.Keyword(null, "col-beg", "col-beg", 1439702358)), L = cljs.core.get.call(null, x, new cljs.core.Keyword(null, "file", "file", -1269645878)), ca = cljs.core.get.call(null, x, new cljs.core.Keyword(null, "name", "name", 1843675177)), C = [cljs.core.str.cljs$core$IFn$_invoke$arity$1("e "), cljs.core.str.cljs$core$IFn$_invoke$arity$1(L), 
               cljs.core.str.cljs$core$IFn$_invoke$arity$1(" | "), cljs.core.str.cljs$core$IFn$_invoke$arity$1("call cursor("), cljs.core.str.cljs$core$IFn$_invoke$arity$1(z), cljs.core.str.cljs$core$IFn$_invoke$arity$1(","), cljs.core.str.cljs$core$IFn$_invoke$arity$1(y), cljs.core.str.cljs$core$IFn$_invoke$arity$1(") | "), cljs.core.str.cljs$core$IFn$_invoke$arity$1('exe "normal! cw'), cljs.core.str.cljs$core$IFn$_invoke$arity$1(e), cljs.core.str.cljs$core$IFn$_invoke$arity$1('" | '), cljs.core.str.cljs$core$IFn$_invoke$arity$1("w")].join("");
               h = function() {
                 return function(a, b, c, d, e, f, g, h, k, l, m, n, p, q, r, t, u, v, w, x, y, B, C, z, A) {
-                  return function(b) {
-                    return cljs.core.async.close_BANG_.call(null, a);
+                  return function(a) {
+                    return cljs.core.async.close_BANG_.call(null, b);
                   };
-                }(k, w, v, x, t, ca, L, z, u, r, y, r, t, u, v, k, w, x, z, y, L, ca, C, g, b);
+                }(t, k, v, x, ca, L, z, u, r, w, y, r, t, u, k, v, w, x, z, y, L, ca, C, g, b);
               }();
               h = a.command(C, h);
               f[14] = h;
@@ -34415,20 +34419,20 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               return B = f[15], h = cljs.core.PROTOCOL_SENTINEL === B.cljs$core$ISeq$, h = B.cljs$lang$protocol_mask$partition0$ & 64 || h, cljs.core.truth_(h) ? f[1] = 35 : f[1] = 36, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (40 === g) {
-              t = f[10];
-              B = f[15];
-              var D = f[16];
+              r = f[9];
               u = f[11];
-              v = f[12];
               k = f[8];
+              w = f[13];
+              var D = f[16];
+              B = f[15];
               var A = f[2], E = cljs.core.get.call(null, A, new cljs.core.Keyword(null, "line-beg", "line-beg", -1940810773)), F = cljs.core.get.call(null, A, new cljs.core.Keyword(null, "col-beg", "col-beg", 1439702358)), G = cljs.core.get.call(null, A, new cljs.core.Keyword(null, "file", "file", -1269645878)), I = cljs.core.get.call(null, A, new cljs.core.Keyword(null, "name", "name", 1843675177)), K = [cljs.core.str.cljs$core$IFn$_invoke$arity$1("e "), cljs.core.str.cljs$core$IFn$_invoke$arity$1(G), 
               cljs.core.str.cljs$core$IFn$_invoke$arity$1(" | "), cljs.core.str.cljs$core$IFn$_invoke$arity$1("call cursor("), cljs.core.str.cljs$core$IFn$_invoke$arity$1(E), cljs.core.str.cljs$core$IFn$_invoke$arity$1(","), cljs.core.str.cljs$core$IFn$_invoke$arity$1(F), cljs.core.str.cljs$core$IFn$_invoke$arity$1(") | "), cljs.core.str.cljs$core$IFn$_invoke$arity$1('exe "normal! cw'), cljs.core.str.cljs$core$IFn$_invoke$arity$1(e), cljs.core.str.cljs$core$IFn$_invoke$arity$1('" | '), cljs.core.str.cljs$core$IFn$_invoke$arity$1("w")].join("");
               h = function() {
                 return function(a, b, c, d, e, f, g, h, k, l, m, n, p, q, r, t, u, v, w, x, y, B, C, z, A, D) {
-                  return function(b) {
-                    return cljs.core.async.close_BANG_.call(null, a);
+                  return function(a) {
+                    return cljs.core.async.close_BANG_.call(null, b);
                   };
-                }(k, B, v, t, I, G, E, A, D, u, D, F, t, B, D, u, v, k, A, E, F, G, I, K, g, b);
+                }(D, k, B, A, I, G, E, D, u, r, w, F, r, u, k, w, D, B, A, E, F, G, I, K, g, b);
               }();
               h = a.command(K, h);
               f[17] = h;
@@ -34438,29 +34442,29 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               return f[2] = !1, f[1] = 34, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (13 === g) {
-              return u = f[11], v = f[12], w = f[13], h = cljs.core._nth.call(null, u, v), l = cljs.core.not.call(null, null == h), f[13] = h, f[1] = l ? 16 : 17, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return r = f[9], v = f[12], w = f[13], h = cljs.core._nth.call(null, w, r), l = cljs.core.not.call(null, null == h), f[12] = h, f[1] = l ? 16 : 17, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (22 === g) {
-              return w = f[13], h = cljs.core.apply.call(null, cljs.core.hash_map, w), f[2] = h, f[1] = 24, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return v = f[12], h = cljs.core.apply.call(null, cljs.core.hash_map, v), f[2] = h, f[1] = 24, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (36 === g) {
               return f[2] = !1, f[1] = 37, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (41 === g) {
-              return D = f[16], h = f[2], r = cljs.core.next.call(null, D), u = null, v = t = 0, f[9] = r, f[10] = t, f[11] = u, f[12] = v, f[18] = h, f[2] = null, f[1] = 11, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return D = f[16], h = f[2], t = cljs.core.next.call(null, D), w = null, r = u = 0, f[9] = r, f[10] = t, f[11] = u, f[18] = h, f[13] = w, f[2] = null, f[1] = 11, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (29 === g) {
               D = f[16];
               h = cljs.core.chunk_first.call(null, D);
               var l = cljs.core.chunk_rest.call(null, D), J = cljs.core.count.call(null, h);
-              r = l;
-              u = h;
-              t = J;
-              v = 0;
+              t = l;
+              w = h;
+              u = J;
+              r = 0;
               f[9] = r;
               f[10] = t;
               f[11] = u;
-              f[12] = v;
+              f[13] = w;
               f[2] = null;
               f[1] = 11;
               return new cljs.core.Keyword(null, "recur", "recur", -437573268);
@@ -34472,7 +34476,7 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               return h = f[2], f[2] = h, f[1] = 15, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (25 === g) {
-              return r = f[9], t = f[10], u = f[11], v = f[12], h = f[2], f[9] = r, f[10] = t, f[19] = h, f[11] = u, f[12] = v + 1, f[2] = null, f[1] = 11, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return r = f[9], t = f[10], u = f[11], w = f[13], h = f[2], f[9] = r + 1, f[10] = t, f[11] = u, f[19] = h, f[13] = w, f[2] = null, f[1] = 11, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (34 === g) {
               return h = f[2], cljs.core.truth_(h) ? f[1] = 38 : f[1] = 39, new cljs.core.Keyword(null, "recur", "recur", -437573268);
@@ -34490,7 +34494,7 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               return h = f[7], l = cljs.core.PROTOCOL_SENTINEL === h.cljs$core$ISeq$, h = h.cljs$lang$protocol_mask$partition0$ & 64 || l, cljs.core.truth_(h) ? f[1] = 5 : f[1] = 6, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (23 === g) {
-              return w = f[13], f[2] = w, f[1] = 24, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return v = f[12], f[2] = v, f[1] = 24, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (35 === g) {
               return f[2] = !0, f[1] = 37, new cljs.core.Keyword(null, "recur", "recur", -437573268);
@@ -34499,7 +34503,7 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               return f[2] = !0, f[1] = 21, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (11 === g) {
-              return t = f[10], v = f[12], cljs.core.truth_(v < t) ? f[1] = 13 : f[1] = 14, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return r = f[9], u = f[11], cljs.core.truth_(r < u) ? f[1] = 13 : f[1] = 14, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (9 === g) {
               return h = f[7], f[2] = h, f[1] = 10, new cljs.core.Keyword(null, "recur", "recur", -437573268);
@@ -34508,19 +34512,19 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               return f[2] = !0, f[1] = 7, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (14 === g) {
-              return r = f[9], D = f[16], h = cljs.core.seq.call(null, r), f[16] = h, f[1] = h ? 26 : 27, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return t = f[10], D = f[16], h = cljs.core.seq.call(null, t), f[16] = h, f[1] = h ? 26 : 27, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (26 === g) {
               return D = f[16], h = cljs.core.chunked_seq_QMARK_.call(null, D), f[1] = h ? 29 : 30, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (16 === g) {
-              return w = f[13], h = cljs.core.PROTOCOL_SENTINEL === w.cljs$core$ISeq$, h = w.cljs$lang$protocol_mask$partition0$ & 64 || h, cljs.core.truth_(h) ? f[1] = 19 : f[1] = 20, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return v = f[12], h = cljs.core.PROTOCOL_SENTINEL === v.cljs$core$ISeq$, h = v.cljs$lang$protocol_mask$partition0$ & 64 || h, cljs.core.truth_(h) ? f[1] = 19 : f[1] = 20, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (38 === g) {
               return B = f[15], h = cljs.core.apply.call(null, cljs.core.hash_map, B), f[2] = h, f[1] = 40, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (30 === g) {
-              return B = f[15], D = f[16], h = cljs.core.first.call(null, D), l = cljs.core.not.call(null, null == h), f[15] = h, f[1] = l ? 32 : 33, new cljs.core.Keyword(null, "recur", "recur", -437573268);
+              return D = f[16], B = f[15], h = cljs.core.first.call(null, D), l = cljs.core.not.call(null, null == h), f[15] = h, f[1] = l ? 32 : 33, new cljs.core.Keyword(null, "recur", "recur", -437573268);
             }
             if (10 === g) {
               h = f[2];
@@ -34531,15 +34535,15 @@ clj_refactor.repl.rename_symbol = function(a, b, c, d, e) {
               l = a.command(l);
               J = (new cljs.core.Keyword(null, "occurrences", "occurrences", 295025356)).cljs$core$IFn$_invoke$arity$1(d);
               J = cljs.core.conj.call(null, J);
-              r = cljs.core.seq.call(null, J);
-              u = null;
-              v = t = 0;
+              t = cljs.core.seq.call(null, J);
+              w = null;
+              r = u = 0;
               f[9] = r;
               f[10] = t;
-              f[20] = h;
+              f[20] = l;
               f[11] = u;
-              f[12] = v;
-              f[21] = l;
+              f[13] = w;
+              f[21] = h;
               f[2] = null;
               f[1] = 11;
               return new cljs.core.Keyword(null, "recur", "recur", -437573268);
@@ -34621,12 +34625,12 @@ clj_refactor.repl.magic_requires = function(a, b, c, d, e) {
               var l = cljs.core.async.chan.call(null);
               f = cljs.core.async.chan.call(null);
               var m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, k], null), m = clj_refactor.repl.add_missing_libspec.call(null, l, b, c, d, m), n = console.debug("waiting on cram");
-              e[7] = m;
-              e[8] = n;
+              e[7] = n;
+              e[8] = m;
               e[9] = f;
               return cljs.core.async.impl.ioc_helpers.take_BANG_.call(null, e, 2, l);
             }
-            return 2 === f ? (f = e[9], l = e[2], m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, h], null), m = clj_refactor.repl.clean_ns.call(null, f, b, c, d, m), n = console.debug("waiting on clean"), e[10] = l, e[11] = m, e[12] = n, cljs.core.async.impl.ioc_helpers.take_BANG_.call(null, e, 3, f)) : 3 === f ? (f = e[2], l = console.debug("closing magic"), m = cljs.core.async.close_BANG_.call(null, a), e[13] = l, e[14] = f, cljs.core.async.impl.ioc_helpers.return_chan.call(null, 
+            return 2 === f ? (f = e[9], l = e[2], m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, h], null), m = clj_refactor.repl.clean_ns.call(null, f, b, c, d, m), n = console.debug("waiting on clean"), e[10] = m, e[11] = l, e[12] = n, cljs.core.async.impl.ioc_helpers.take_BANG_.call(null, e, 3, f)) : 3 === f ? (f = e[2], l = console.debug("closing magic"), m = cljs.core.async.close_BANG_.call(null, a), e[13] = f, e[14] = l, cljs.core.async.impl.ioc_helpers.return_chan.call(null, 
             e, m)) : null;
           };
         }(e, f, g, k, l), e, f, g, k, l);
@@ -34743,7 +34747,7 @@ clj_refactor.main.run_transform_STAR_.cljs$core$IFn$_invoke$arity$variadic = fun
       };
     }(e, g, k, l, h)).catch(function(b, d, e, f, g) {
       return function(b) {
-        c.command([cljs.core.str.cljs$core$IFn$_invoke$arity$1('echoerr "'), cljs.core.str.cljs$core$IFn$_invoke$arity$1(b.message), cljs.core.str.cljs$core$IFn$_invoke$arity$1('"')].join(""));
+        clj_refactor.util.echo_err.call(null, c, b.message);
         return cljs.core.async.close_BANG_.call(null, a);
       };
     }(e, g, k, l, h));
@@ -34979,10 +34983,10 @@ clj_refactor.main.run_repl = function(a, b, c, d, e) {
 };
 clj_refactor.main.legacy_opts_wrap_fn = function(a, b, c) {
   return function(d) {
-    var e = a.nvim;
-    return (cljs.core.truth_((new cljs.core.Keyword(null, "eval", "eval", -1103567905)).cljs$core$IFn$_invoke$arity$1(c)) ? e.eval((new cljs.core.Keyword(null, "eval", "eval", -1103567905)).cljs$core$IFn$_invoke$arity$1(c)) : clj_refactor.main.every.call(null, cljs.core.PersistentVector.EMPTY)).then(function(a) {
+    var e = b.nvim;
+    return (cljs.core.truth_((new cljs.core.Keyword(null, "eval", "eval", -1103567905)).cljs$core$IFn$_invoke$arity$1(c)) ? e.eval((new cljs.core.Keyword(null, "eval", "eval", -1103567905)).cljs$core$IFn$_invoke$arity$1(c)) : clj_refactor.main.every.call(null, cljs.core.PersistentVector.EMPTY)).then(function(b) {
       return function(c) {
-        return b.call(null, a, cljs.core.js__GT_clj.call(null, d), c);
+        return a.call(null, b, cljs.core.js__GT_clj.call(null, d), c);
       };
     }(e));
   };
@@ -35001,7 +35005,7 @@ clj_refactor.main.register_command.cljs$core$IFn$_invoke$arity$3 = function(a, b
   return a.registerCommand(b, c);
 };
 clj_refactor.main.register_command.cljs$core$IFn$_invoke$arity$4 = function(a, b, c, d) {
-  return a.registerCommand(b, clj_refactor.main.legacy_opts_wrap_fn.call(null, a, c, d), cljs.core.clj__GT_js.call(null, cljs.core.dissoc.call(null, d, new cljs.core.Keyword(null, "eval", "eval", -1103567905))));
+  return a.registerCommand(b, clj_refactor.main.legacy_opts_wrap_fn.call(null, c, a, d), cljs.core.clj__GT_js.call(null, cljs.core.dissoc.call(null, d, new cljs.core.Keyword(null, "eval", "eval", -1103567905))));
 };
 clj_refactor.main.register_command.cljs$lang$maxFixedArity = 4;
 clj_refactor.main._main = function(a) {

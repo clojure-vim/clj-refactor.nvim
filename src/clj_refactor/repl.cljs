@@ -3,6 +3,7 @@
    [cljs.reader :as reader]
    [clojure.string :as string]
    [rewrite-clj.parser :as parser]
+   [clj-refactor.util :refer [echo-err]]
    [clj-refactor.transform :as transform]
    [cljs.core.async :refer [close! chan <!]])
   (:require-macros
@@ -38,11 +39,11 @@
                 (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]))))
        (.catch (fn [err]
                 (js/console.debug (pr-str args) err)
-                (.command nvim (str "echoerr \"Error: " err "\""))
+                (echo-err nvim (str "Error: " err))
                 (close! done-ch)))
        (.then (partial handle-fireplace done-ch nvim args cb))
        (.catch (fn [err]
-                 (.command nvim (str "echo \"Error: " (str (.-message err) (-> err ex-data :message)) "\""))
+                 (echo-err nvim (str "Error: " (str (.-message err) (-> err ex-data :message))))
                  (close! done-ch))))))
 
 (defn nrepl-resolve-missing
