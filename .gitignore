@@ -4,5 +4,5 @@
 /.lein-failures
 /figwheel_server.log
 /target
-/rplugin/node/clj-refactor.js.map
-/rplugin/node/clj-refactor/
+/rplugin/node/clj-refactor/compiled.js.map
+/rplugin/node/clj-refactor/build

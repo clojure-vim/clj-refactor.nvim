@@ -7,6 +7,7 @@
    [clj-refactor.transform :as transform]
    [cljfmt.core :as cljfmt]
    [clojure.string :as string]
+   [goog.object :as object]
    [rewrite-clj.node :as n]
    [rewrite-clj.node.forms :as nf]
    [rewrite-clj.parser :as parser]
@@ -23,10 +24,11 @@
 
 (nodejs/enable-util-print!)
 
+(defn every [& args]
+  (js/Promise.all (into-array args)))
+
 (defn jdbg [val & args]
-  (if (exists? js/debug)
-    (apply js/debug val args)
-    (apply println val args))
+  (apply js/console.debug val args)
   val)
 
 (defn cdbg [val]
@@ -45,115 +47,177 @@
   "Finds the loc at row col of the file and runs the transformer-fn."
   [transformer lines row col args]
   (try
-   (let [new-cursor (atom [row col])
-         sexpr (string/join "\n" lines)
-         pos {:row row :col col :end-row row :end-col col}
-         zloc (-> sexpr
-                  (z/of-string)
-                  (z/find-last-by-pos pos #(not= (z/tag %) :whitespace)))
-         zpos (meta (z/node zloc))
-         offset (- col (:col zpos))
-         new-sexpr (-> zloc
-                       (edit/mark-position :new-cursor)
+    (let [new-cursor (atom [row col])
+          sexpr (string/join "\n" lines)
+          pos {:row row :col col :end-row row :end-col col}
+          zloc (-> sexpr
+                   (z/of-string)
+                   (z/find-last-by-pos pos #(not= (z/tag %) :whitespace)))
+          zpos (meta (z/node zloc))
+          offset (- col (:col zpos))
+          new-sexpr (-> zloc
+                        (edit/mark-position :new-cursor)
                        ;; TODO should check if anything has changed
                        ;; - should return nil if transformer returned nil
-                       (transformer args)
-                       (edit/mark-position :reformat)
-                       (edit/format-marked)
-                       (edit/find-mark :new-cursor)
-                       (swap-position! new-cursor offset)
-                       (z/root-string))]
-     (let [[row col] @new-cursor]
-       {:row row
-        :col col
-        :new-lines (split-lines new-sexpr)}))
-   (catch :default e
-     (jdbg "zip-it" e (.-stack e))
-     (throw e))))
+                        (transformer args)
+                        (edit/mark-position :reformat)
+                        (edit/format-marked)
+                        (edit/find-mark :new-cursor)
+                        (swap-position! new-cursor offset)
+                        (z/root-string))]
+      (let [[row col] @new-cursor]
+        {:row row
+         :col col
+         :new-lines (split-lines new-sexpr)}))
+    (catch :default e
+      (jdbg "zip-it" e (.-stack e))
+      (throw e))))
 
 (defn run-transform* [done-ch transformer nvim args [_ cur-row cur-col _] & static-args]
   "Reads the current buffer, runs the transformation and modifies the current buffer with the result."
   (try
-   (.getCurrentBuffer nvim
-                      (fn [err buf]
-                        (.getLineSlice buf 0 -1 true true
-                                       (fn [err lines]
-                                         (try
-                                           (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) cur-row cur-col (concat args static-args))]
-                                             (try
-                                              (.setLineSlice buf 0 -1 true true (clj->js new-lines)
-                                                             (fn [err]
-                                                               (.command nvim (str "call cursor("row "," col")")
-                                                                         (fn [err]
-                                                                           (close! done-ch)))))
-                                              (catch :default e
-                                                (jdbg "save" e (.-stack e))))
-                                             (close! done-ch))
-                                          (catch :default e
-                                            (.command nvim (str "echo \"" (.-message e) "\""))
-                                            (close! done-ch)))))))
-   (catch :default e
-     (jdbg "run-transform" e))))
+    (-> (.-buffer nvim)
+        (.then
+         (fn [buf]
+           (every buf (.getLines buf #js {:start 0
+                                          :end -1}))))
+        (.then
+         (fn [[buf lines]]
+           (if-let [{:keys [row col new-lines]} (zip-it transformer (js->clj lines) cur-row cur-col (concat args static-args))]
+             (-> (.setLines buf (clj->js new-lines) #js {:start 0 :end -1})
+                 (.catch
+                  (fn [err]
+                    (.command nvim (str "call cursor(" row "," col ")")))))
+             nil)))
+        (.then
+         (fn [_]
+           (close! done-ch)))
+        (.catch (fn [e]
+                  (.command nvim (str "echoerr \"" (.-message e) "\""))
+                  (close! done-ch))))
+    (catch :default e
+      (jdbg "run-transform" e))))
+
+(defn channel-promise
+  [c]
+  (new js/Promise
+       (fn [resolve reject]
+         (go (resolve (<! c))))))
 
 (defn run-transform
   [transformer nvim args cursor & static-args]
   (let [done-ch (chan)]
     (go
-      (apply run-transform* done-ch transformer nvim args cursor static-args)
-      (<! done-ch))))
+      (apply run-transform* done-ch transformer nvim args cursor static-args))
+    (channel-promise done-ch)))
 
 (defn run-repl
-  [fn-thing nvim args static-args callback]
-  (go
-    (let [done-ch (chan)]
-      (fn-thing done-ch run-transform* nvim args static-args)
-      (<! done-ch)
-      (when callback
-        (callback 0)))))
+  [fn-thing nvim args eval-result static-args]
+  (let [done-ch (chan)]
+    (go
+      (let [done-ch (chan)]
+        (fn-thing done-ch run-transform* nvim args eval-result)))
+    (channel-promise done-ch)))
 
-(defn -main []
-  (try
-   (when (exists? js/plugin)
-     (jdbg "hello refactor")
-     (.command js/plugin "CAddDeclaration" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/add-declaration))
-     (.command js/plugin "CCycleColl" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-coll))
-     (.command js/plugin "CCycleIf" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-if))
-     (.command js/plugin "CCyclePrivacy" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-privacy))
-     (.command js/plugin "CCycleThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/cycle-thread))
-     (.command js/plugin "CExpandLet" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/expand-let))
-     (.command js/plugin "CExtractDef" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/extract-def))
-     (.command js/plugin "CFunctionFromExample" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/function-from-example))
-     (.command js/plugin "CIntroduceLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/introduce-let))
-     (.command js/plugin "CMoveToLet" #js {:eval "getpos('.')" :nargs 1} (partial run-transform transform/move-to-let))
-     (.command js/plugin "CThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread))
-     (.command js/plugin "CThreadFirstAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-first-all))
-     (.command js/plugin "CThreadLast" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-last))
-     (.command js/plugin "CThreadLastAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/thread-last-all))
-     (.command js/plugin "CUnwindAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-all))
-     (.command js/plugin "CUnwindThread" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/unwind-thread))
+(defn legacy-opts-wrap-fn
+  [plugin f opts]
+  (fn [args]
+    (let [nvim (.-nvim plugin)]
+      (-> (if (:eval opts)
+            (.eval nvim (:eval opts))
+            (every []))
+          (.then
+           (fn [eval-result]
+             (f nvim (js->clj args) eval-result)))))))
 
-     (.command js/plugin "CFormatAll" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/format-all))
-     (.command js/plugin "CFormatForm" #js {:eval "getpos('.')" :nargs 0} (partial run-transform transform/format-form))
+(defn register-command
+  ([plugin name f]
+   (.registerCommand plugin name f))
+  ([plugin name f opts]
+   (.registerCommand plugin
+                     name
+                     (legacy-opts-wrap-fn plugin f opts)
+                     (clj->js (dissoc opts :eval)))))
 
-     ;; REPL only commands
-     (.command js/plugin "CAddMissingLibSpec" #js {:eval "[getpos('.'), expand('<cword>')]" :nargs 0} (partial run-repl repl/add-missing-libspec))
-     (.command js/plugin "CCleanNS"
-               #js {:eval (str "[getpos('.'), expand('%:p'),"
-                               " (exists('g:clj_refactor_prune_ns_form') ? g:clj_refactor_prune_ns_form : 1),"
-                               " (exists('g:clj_refactor_prefix_rewriting') ? g:clj_refactor_prefix_rewriting : 1)]")
-                    :nargs 0}
-               (partial run-repl repl/clean-ns))
-     (.command js/plugin "CRenameFile" #js {:eval "expand('%:p')" :nargs 1 :complete "file"} repl/rename-file)
-     (.command js/plugin "CRenameDir" #js {:eval "expand('%:p:h')" :nargs 1 :complete "dir"} repl/rename-dir)
-     (.command js/plugin "CRenameSymbol"
-               #js {:eval "[getcwd(), expand('%:p'), fireplace#ns(), expand('<cword>'), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1}
-               (partial repl/extract-definition repl/rename-symbol))
-     (.command js/plugin "CExtractFunction"
-               #js {:eval "[expand('%:p'), getpos('.')]" :nargs 1}
-               (partial repl/find-used-locals run-transform transform/extract-function))
-     (.commandSync js/plugin "CMagicRequires" #js {:eval "[getpos('.'), expand('%:p'), expand('<cword>')]" :nargs 0} (partial run-repl repl/magic-requires)))
+(defn ^:export -main [plugin]
+  (doto plugin
+    (register-command "CAddDeclaration"
+                      (partial run-transform transform/add-declaration)
+                      {:nargs 0, :eval "getpos('.')"})
+    (register-command "CCycleColl"
+                      (partial run-transform transform/cycle-coll)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CCycleIf"
+                      (partial run-transform transform/cycle-if)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CCyclePrivacy"
+                      (partial run-transform transform/cycle-privacy)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CCycleThread"
+                      (partial run-transform transform/cycle-thread)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CExpandLet"
+                      (partial run-transform transform/expand-let)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CExtractDef"
+                      (partial run-transform transform/extract-def)
+                      {:eval "getpos('.')" :nargs 1})
+    (register-command "CFunctionFromExample"
+                      (partial run-transform transform/function-from-example)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CIntroduceLet"
+                      (partial run-transform transform/introduce-let)
+                      {:eval "getpos('.')" :nargs 1})
+    (register-command "CMoveToLet"
+                      (partial run-transform transform/move-to-let)
+                      {:eval "getpos('.')" :nargs 1})
+    (register-command "CThread"
+                      (partial run-transform transform/thread)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CThreadFirstAll"
+                      (partial run-transform transform/thread-first-all)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CThreadLast"
+                      (partial run-transform transform/thread-last)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CThreadLastAll"
+                      (partial run-transform transform/thread-last-all)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CUnwindAll"
+                      (partial run-transform transform/unwind-all)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CUnwindThread"
+                      (partial run-transform transform/unwind-thread)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CFormatAll"
+                      (partial run-transform transform/format-all)
+                      {:eval "getpos('.')" :nargs 0})
+    (register-command "CFormatForm"
+                      (partial run-transform transform/format-form)
+                      {:eval "getpos('.')" :nargs 0})
 
-   (catch js/Error e
-     (jdbg "main exception" e))))
-
-(set! *main-cli-fn* -main)
+    ;; REPL only commands:
+    (register-command "CAddMissingLibSpec"
+                      (partial run-repl repl/add-missing-libspec)
+                      {:eval "[getpos('.'), expand('<cword>')]" :nargs 0})
+    (register-command "CCleanNS"
+                      (partial run-repl repl/clean-ns)
+                      {:eval (str "[getpos('.'), expand('%:p'),"
+                                  " (exists('g:clj_refactor_prune_ns_form') ? g:clj_refactor_prune_ns_form : 1),"
+                                  " (exists('g:clj_refactor_prefix_rewriting') ? g:clj_refactor_prefix_rewriting : 1)]")
+                       :nargs 0})
+    (register-command "CRenameFile"
+                      repl/rename-file
+                      {:eval "expand('%:p')" :nargs 1 :complete "file"})
+    (register-command "CRenameDir"
+                      repl/rename-dir
+                      {:eval "expand('%:p:h')" :nargs 1 :complete "dir"})
+    (register-command "CRenameSymbol"
+                      (partial repl/extract-definition repl/rename-symbol)
+                      {:eval "[getcwd(), expand('%:p'), fireplace#ns(), expand('<cword>'), fireplace#info(expand('<cword>')), getpos('.')]" :nargs 1})
+    (register-command "CExtractFunction"
+                      (partial repl/find-used-locals run-transform transform/extract-function)
+                      {:eval "[expand('%:p'), getpos('.')]" :nargs 1})
+    (register-command "CMagicRequires"
+                      (partial run-repl repl/magic-requires)
+                      {:eval "[getpos('.'), expand('%:p'), expand('<cword>')]" :nargs 0})))
