@@ -11,7 +11,7 @@
 
 (defn handle-fireplace
   [done-ch nvim args cb results]
-  (js/console.debug "First debug of handle-fireplace" (pr-str args) (pr-str results))
+  (js/console.log "First debug of handle-fireplace" (pr-str args) (pr-str results))
   (cond
     (not results)
     (throw (ex-info "Unable to get results"
@@ -23,7 +23,7 @@
 
     :else
     (do
-     (js/console.debug (:op args) results)
+     (js/console.log (:op args) results)
      (cb (first results)))))
 
 (defn fireplace-message
@@ -38,7 +38,7 @@
        (.then (fn [_]
                 (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]))))
        (.catch (fn [err]
-                (js/console.debug (pr-str args) err)
+                (js/console.log (pr-str args) err)
                 (echo-err nvim (str "Error: " err))
                 (close! done-ch)))
        (.then (partial handle-fireplace done-ch nvim args cb))
@@ -59,7 +59,7 @@
         (if (seq cstr)
           (let [candidates (reader/read-string cstr)]
             (when (> (count candidates) 1)
-              (js/console.debug "More than one candidate!" candidates))
+              (js/console.log "More than one candidate!" candidates))
             ;; take first one for now - maybe can get input() choice
             (if-let [{:keys [name type]} (first candidates)]
               (run-transform done-ch transform/add-candidate nvim [name type (namespace sym)] cursor)
@@ -187,11 +187,11 @@
    (let [cram-ch (chan)
          clean-ch (chan)]
      (add-missing-libspec cram-ch run-transform nvim args [cursor word])
-     (js/console.debug "waiting on cram")
+     (js/console.log "waiting on cram")
      (<! cram-ch)
      (clean-ns clean-ch run-transform nvim args [cursor path])
-     (js/console.debug "waiting on clean")
+     (js/console.log "waiting on clean")
      (<! clean-ch)
-     (js/console.debug "closing magic")
+     (js/console.log "closing magic")
      (close! done-ch))))
 

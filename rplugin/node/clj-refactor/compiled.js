@@ -34190,14 +34190,14 @@ clj_refactor.util.echo_err = function(a, b) {
 };
 clj_refactor.repl = {};
 clj_refactor.repl.handle_fireplace = function(a, b, c, d, e) {
-  console.debug("First debug of handle-fireplace", cljs.core.pr_str.call(null, c), cljs.core.pr_str.call(null, e));
+  console.log("First debug of handle-fireplace", cljs.core.pr_str.call(null, c), cljs.core.pr_str.call(null, e));
   if (cljs.core.not.call(null, e)) {
     throw cljs.core.ex_info.call(null, "Unable to get results", new cljs.core.PersistentArrayMap(null, 1, [new cljs.core.Keyword(null, "message", "message", -406056002), [cljs.core.str.cljs$core$IFn$_invoke$arity$1(cljs.core.pr_str.call(null, c)), cljs.core.str.cljs$core$IFn$_invoke$arity$1("\x3d\x3e"), cljs.core.str.cljs$core$IFn$_invoke$arity$1(cljs.core.pr_str.call(null, e))].join("")], null));
   }
   if (cljs.core.truth_(cljs.core.first.call(null, e).error)) {
     throw cljs.core.ex_info.call(null, "Error during fireplace#message: ", new cljs.core.PersistentArrayMap(null, 1, [new cljs.core.Keyword(null, "message", "message", -406056002), cljs.core.first.call(null, e).error], null));
   }
-  console.debug((new cljs.core.Keyword(null, "op", "op", -1882987955)).cljs$core$IFn$_invoke$arity$1(c), e);
+  console.log((new cljs.core.Keyword(null, "op", "op", -1882987955)).cljs$core$IFn$_invoke$arity$1(c), e);
   return d.call(null, cljs.core.first.call(null, e));
 };
 clj_refactor.repl.fireplace_message = function(a) {
@@ -34222,7 +34222,7 @@ clj_refactor.repl.fireplace_message.cljs$core$IFn$_invoke$arity$5 = function(a, 
   return (cljs.core.truth_(a) ? c.command("w") : Promise.resolve(0)).then(function(a) {
     return c.callFunction("fireplace#message", cljs.core.clj__GT_js.call(null, new cljs.core.PersistentVector(null, 1, 5, cljs.core.PersistentVector.EMPTY_NODE, [cljs.core.clj__GT_js.call(null, d)], null)));
   }).catch(function(a) {
-    console.debug(cljs.core.pr_str.call(null, d), a);
+    console.log(cljs.core.pr_str.call(null, d), a);
     clj_refactor.util.echo_err.call(null, c, [cljs.core.str.cljs$core$IFn$_invoke$arity$1("Error: "), cljs.core.str.cljs$core$IFn$_invoke$arity$1(a)].join(""));
     return cljs.core.async.close_BANG_.call(null, b);
   }).then(cljs.core.partial.call(null, clj_refactor.repl.handle_fireplace, b, c, d, e)).catch(function(a) {
@@ -34235,7 +34235,7 @@ clj_refactor.repl.nrepl_resolve_missing = function(a, b, c, d, e) {
   return clj_refactor.repl.fireplace_message.call(null, !1, a, c, new cljs.core.PersistentArrayMap(null, 2, [new cljs.core.Keyword(null, "op", "op", -1882987955), "resolve-missing", new cljs.core.Keyword(null, "symbol", "symbol", -1038572696), "" + cljs.core.str.cljs$core$IFn$_invoke$arity$1(d)], null), function(f) {
     f = f.candidates;
     if (cljs.core.seq.call(null, f)) {
-      if (f = cljs.reader.read_string.call(null, f), 1 < cljs.core.count.call(null, f) && console.debug("More than one candidate!", f), f = cljs.core.first.call(null, f), cljs.core.truth_(f)) {
+      if (f = cljs.reader.read_string.call(null, f), 1 < cljs.core.count.call(null, f) && console.log("More than one candidate!", f), f = cljs.core.first.call(null, f), cljs.core.truth_(f)) {
         var g = null != f && (f.cljs$lang$protocol_mask$partition0$ & 64 || cljs.core.PROTOCOL_SENTINEL === f.cljs$core$ISeq$) ? cljs.core.apply.call(null, cljs.core.hash_map, f) : f;
         f = cljs.core.get.call(null, g, new cljs.core.Keyword(null, "name", "name", 1843675177));
         g = cljs.core.get.call(null, g, new cljs.core.Keyword(null, "type", "type", 1174270348));
@@ -34624,13 +34624,13 @@ clj_refactor.repl.magic_requires = function(a, b, c, d, e) {
             if (1 === f) {
               var l = cljs.core.async.chan.call(null);
               f = cljs.core.async.chan.call(null);
-              var m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, k], null), m = clj_refactor.repl.add_missing_libspec.call(null, l, b, c, d, m), n = console.debug("waiting on cram");
+              var m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, k], null), m = clj_refactor.repl.add_missing_libspec.call(null, l, b, c, d, m), n = console.log("waiting on cram");
               e[7] = n;
               e[8] = m;
               e[9] = f;
               return cljs.core.async.impl.ioc_helpers.take_BANG_.call(null, e, 2, l);
             }
-            return 2 === f ? (f = e[9], l = e[2], m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, h], null), m = clj_refactor.repl.clean_ns.call(null, f, b, c, d, m), n = console.debug("waiting on clean"), e[10] = m, e[11] = l, e[12] = n, cljs.core.async.impl.ioc_helpers.take_BANG_.call(null, e, 3, f)) : 3 === f ? (f = e[2], l = console.debug("closing magic"), m = cljs.core.async.close_BANG_.call(null, a), e[13] = f, e[14] = l, cljs.core.async.impl.ioc_helpers.return_chan.call(null, 
+            return 2 === f ? (f = e[9], l = e[2], m = new cljs.core.PersistentVector(null, 2, 5, cljs.core.PersistentVector.EMPTY_NODE, [g, h], null), m = clj_refactor.repl.clean_ns.call(null, f, b, c, d, m), n = console.log("waiting on clean"), e[10] = m, e[11] = l, e[12] = n, cljs.core.async.impl.ioc_helpers.take_BANG_.call(null, e, 3, f)) : 3 === f ? (f = e[2], l = console.log("closing magic"), m = cljs.core.async.close_BANG_.call(null, a), e[13] = f, e[14] = l, cljs.core.async.impl.ioc_helpers.return_chan.call(null, 
             e, m)) : null;
           };
         }(e, f, g, k, l), e, f, g, k, l);
@@ -34676,7 +34676,7 @@ clj_refactor.main.jdbg = function(a) {
   return clj_refactor.main.jdbg.cljs$core$IFn$_invoke$arity$variadic(arguments[0], b);
 };
 clj_refactor.main.jdbg.cljs$core$IFn$_invoke$arity$variadic = function(a, b) {
-  cljs.core.apply.call(null, console.debug, a, b);
+  cljs.core.apply.call(null, console.log, a, b);
   return a;
 };
 clj_refactor.main.jdbg.cljs$lang$maxFixedArity = 1;

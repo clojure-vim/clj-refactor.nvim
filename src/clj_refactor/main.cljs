@@ -29,7 +29,7 @@
   (js/Promise.all (into-array args)))
 
 (defn jdbg [val & args]
-  (apply js/console.debug val args)
+  (apply js/console.log val args)
   val)
 
 (defn cdbg [val]
