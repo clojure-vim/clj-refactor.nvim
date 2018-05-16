@@ -3,25 +3,28 @@
    [cljs.reader :as reader]
    [clojure.string :as string]
    [rewrite-clj.parser :as parser]
+   [clj-refactor.util :refer [echo-err]]
    [clj-refactor.transform :as transform]
    [cljs.core.async :refer [close! chan <!]])
   (:require-macros
    [cljs.core.async.macros :refer [go]]))
 
 (defn handle-fireplace
-  [done-ch nvim args cb err results]
-  (js/debug (pr-str args) err results)
-  (try
-   (if-let [error (or err (aget (first results) "error"))]
-     (do
-      (.command nvim (str "echo \"Error: " error "\""))
-      (close! done-ch))
-     (do
-      (js/debug (:op args) results)
-      (cb (first results))))
-   (catch :default e
-     (js/debug "fireplace-message" (pr-str args) e e.stack)
-     (close! done-ch))))
+  [done-ch nvim args cb results]
+  (js/console.log "First debug of handle-fireplace" (pr-str args) (pr-str results))
+  (cond
+    (not results)
+    (throw (ex-info "Unable to get results"
+                    {:message (str (pr-str args) "=>" (pr-str results))}))
+
+    (aget (first results) "error")
+    (throw (ex-info "Error during fireplace#message: "
+                    {:message (aget (first results) "error")}))
+
+    :else
+    (do
+     (js/console.log (:op args) results)
+     (cb (first results)))))
 
 (defn fireplace-message
   ([nvim args cb]
@@ -29,15 +32,19 @@
   ([done-ch nvim args cb]
    (fireplace-message true done-ch nvim args cb))
   ([save? done-ch nvim args cb]
-   (if save?
-     (.command nvim "w"
-               (fn [err]
-                 (.callFunction
-                  nvim "fireplace#message" (clj->js [(clj->js args)])
-                  (partial handle-fireplace done-ch nvim args cb))))
-     (.callFunction
-                nvim "fireplace#message" (clj->js [(clj->js args)])
-                (partial handle-fireplace done-ch nvim args cb)))))
+   (-> (if save?
+         (.command nvim "w")
+         (js/Promise.resolve 0))
+       (.then (fn [_]
+                (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]))))
+       (.catch (fn [err]
+                (js/console.log (pr-str args) err)
+                (echo-err nvim (str "Error: " err))
+                (close! done-ch)))
+       (.then (partial handle-fireplace done-ch nvim args cb))
+       (.catch (fn [err]
+                 (echo-err nvim (str "Error: " (str (.-message err) (-> err ex-data :message))))
+                 (close! done-ch))))))
 
 (defn nrepl-resolve-missing
   "Try to add a ns libspec based on whatever the middleware thinks."
@@ -52,7 +59,7 @@
         (if (seq cstr)
           (let [candidates (reader/read-string cstr)]
             (when (> (count candidates) 1)
-              (js/debug "More than one candidate!" candidates))
+              (js/console.log "More than one candidate!" candidates))
             ;; take first one for now - maybe can get input() choice
             (if-let [{:keys [name type]} (first candidates)]
               (run-transform done-ch transform/add-candidate nvim [name type (namespace sym)] cursor)
@@ -180,11 +187,11 @@
    (let [cram-ch (chan)
          clean-ch (chan)]
      (add-missing-libspec cram-ch run-transform nvim args [cursor word])
-     (js/debug "waiting on cram")
+     (js/console.log "waiting on cram")
      (<! cram-ch)
      (clean-ns clean-ch run-transform nvim args [cursor path])
-     (js/debug "waiting on clean")
+     (js/console.log "waiting on clean")
      (<! clean-ch)
-     (js/debug "closing magic")
+     (js/console.log "closing magic")
      (close! done-ch))))
 
