@@ -27,7 +27,7 @@ Using Vundle, add this to your vundle .config/nvim/init.vim section:
 
 - run `:PluginInstall`
 - `:UpdateRemotePlugins` you should see `remote/host: node host registered plugins ['clj-refactor.nvim']` 
-- *restart* nvim
+- close *all* nvims simultaneously
 - refactor
 
 # Progress
