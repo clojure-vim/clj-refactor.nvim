@@ -9,6 +9,8 @@
   (:require-macros
    [cljs.core.async.macros :refer [go]]))
 
+(def ^{:private true :doc "vim list type hint for fireplace#message"} v:t_list 3)
+
 (defn handle-fireplace
   [done-ch nvim args cb results]
   (js/console.log "First debug of handle-fireplace" (pr-str args) (pr-str results))
@@ -36,7 +38,7 @@
          (.command nvim "w")
          (js/Promise.resolve 0))
        (.then (fn [_]
-                (.callFunction nvim "fireplace#message" (clj->js [(clj->js args)]))))
+                (.callFunction nvim "fireplace#message" (clj->js [(clj->js args) v:t_list]))))
        (.catch (fn [err]
                 (js/console.log (pr-str args) err)
                 (echo-err nvim (str "Error: " err))
